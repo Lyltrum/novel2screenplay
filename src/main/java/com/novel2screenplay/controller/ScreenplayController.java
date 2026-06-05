@@ -2,9 +2,14 @@ package com.novel2screenplay.controller;
 
 import com.novel2screenplay.export.FountainExporter;
 import com.novel2screenplay.export.YamlExporter;
+import com.novel2screenplay.model.Character;
+import com.novel2screenplay.model.Scene;
 import com.novel2screenplay.model.Screenplay;
 import com.novel2screenplay.pipeline.ConversionPipeline;
 import com.novel2screenplay.pipeline.ConversionResult;
+import com.novel2screenplay.refine.SceneRefinementService;
+import com.novel2screenplay.validate.SceneValidator;
+import com.novel2screenplay.validate.ValidationReport;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+
+import java.util.List;
 
 /**
  * 只负责：HTTP 入参/出参与格式选择，转调 ConversionPipeline，不含业务逻辑。
@@ -34,13 +41,19 @@ public class ScreenplayController {
     private final ConversionPipeline pipeline;
     private final YamlExporter yamlExporter;
     private final FountainExporter fountainExporter;
+    private final SceneRefinementService refinementService;
+    private final SceneValidator sceneValidator;
 
     public ScreenplayController(ConversionPipeline pipeline,
                                 YamlExporter yamlExporter,
-                                FountainExporter fountainExporter) {
+                                FountainExporter fountainExporter,
+                                SceneRefinementService refinementService,
+                                SceneValidator sceneValidator) {
         this.pipeline = pipeline;
         this.yamlExporter = yamlExporter;
         this.fountainExporter = fountainExporter;
+        this.refinementService = refinementService;
+        this.sceneValidator = sceneValidator;
     }
 
     @PostMapping(value = "/convert", consumes = MediaType.TEXT_PLAIN_VALUE)
@@ -69,6 +82,29 @@ public class ScreenplayController {
                 .contentType(contentType)
                 .header(HEADER_WARNINGS, String.valueOf(result.report().count()))
                 .body(body);
+    }
+
+    /**
+     * 交互式精修：作者拿到初稿后，对某一场提出修改指令做局部重生成。
+     * JSON 进出：{ scene, characters, instruction } → 精修后的 scene。
+     * 响应头 X-Validation-Warnings 暴露精修结果的体检残留问题数。
+     */
+    @PostMapping(value = "/refine",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Scene> refine(@RequestBody RefineRequest request) {
+        if (request == null || request.scene() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "待精修的场景不能为空");
+        }
+        List<Character> characters = request.characters() == null ? List.of() : request.characters();
+
+        Scene refined = refinementService.refine(request.scene(), characters, request.instruction());
+
+        ValidationReport report = sceneValidator.validateScene(refined, characters);
+
+        return ResponseEntity.ok()
+                .header(HEADER_WARNINGS, String.valueOf(report.count()))
+                .body(refined);
     }
 
     /** 调用方显式传 title 时覆盖自动生成的剧名。 */

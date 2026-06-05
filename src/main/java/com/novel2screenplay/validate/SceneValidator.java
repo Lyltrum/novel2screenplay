@@ -25,6 +25,7 @@ public class SceneValidator {
 
     private static final Pattern CJK = Pattern.compile("[\\u4e00-\\u9fff]");
 
+    /** 体检整部剧本（含顶层 title/logline 与每个场景）。 */
     public ValidationReport validate(Screenplay screenplay) {
         List<ValidationIssue> issues = new ArrayList<>();
 
@@ -36,15 +37,25 @@ public class SceneValidator {
         }
 
         Set<String> known = knownCharacterNames(screenplay.characters());
-
         for (Scene scene : screenplay.scenes()) {
-            String id = scene.id();
-            validateHeading(id, scene.heading(), issues);
-            validateContent(id, scene, issues);
-            validateDialogue(id, scene.dialogue(), known, issues);
-            validateSource(id, scene, issues);
+            addSceneIssues(scene, known, issues);
         }
         return new ValidationReport(issues);
+    }
+
+    /** 只体检单个场景（用于交互式精修，不涉及顶层字段）。 */
+    public ValidationReport validateScene(Scene scene, List<Character> characters) {
+        List<ValidationIssue> issues = new ArrayList<>();
+        addSceneIssues(scene, knownCharacterNames(characters), issues);
+        return new ValidationReport(issues);
+    }
+
+    private void addSceneIssues(Scene scene, Set<String> known, List<ValidationIssue> issues) {
+        String id = scene.id();
+        validateHeading(id, scene.heading(), issues);
+        validateContent(id, scene, issues);
+        validateDialogue(id, scene.dialogue(), known, issues);
+        validateSource(id, scene, issues);
     }
 
     private void validateHeading(String id, Heading heading, List<ValidationIssue> issues) {

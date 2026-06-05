@@ -19,3 +19,8 @@ spring:
 
 server:
   port: 8080
+
+# 长文规模化：单块最大字符数，超长章节按段落切块抽取（块间用滚动提要保连续）
+screenplay:
+  chunk:
+    max-chars: 1500

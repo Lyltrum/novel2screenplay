@@ -26,6 +26,9 @@ application-local.yml
 # 内部决策文档（仅本地，不公开）
 CLAUDE.md
 
+# 测试用的外部长篇小说（版权材料，仅本地，不入库）
+docs/*.txt
+
 # OS
 .DS_Store
 Thumbs.db

@@ -28,10 +28,10 @@ public class SceneExtractionService {
         this.styleTemplate = styleTemplate;
     }
 
-    public List<Scene> extract(Chapter chapter, StoryBible bible, String style) {
+    public List<Scene> extract(Chapter chapter, StoryBible bible, String style, String priorSynopsis) {
         String styleGuidance = styleTemplate.guidanceFor(style);
         SceneExtraction result = chatClient.prompt()
-                .user(Prompts.sceneExtraction(chapter, bible, style, styleGuidance))
+                .user(Prompts.sceneExtraction(chapter, bible, style, styleGuidance, priorSynopsis))
                 .call()
                 .entity(SceneExtraction.class);
 

@@ -19,6 +19,8 @@
 | **自检 + 自动修复闭环** | 生成后自动体检（必填字段、对白角色是否在登记表、时间是否中文、来源是否完整），有问题则带着问题清单让模型自我修复（有界 ≤2 轮），残留问题数通过响应头暴露 |
 | **跨章人物一致性** | 逐章建立人物登记表（主名 + 别名 + 设定）并合并去重，注入每个场景生成，保证全篇称呼统一（如"铁面人 = 苏窈的兄长"被正确归并） |
 | **多格式 + 多风格** | 同时支持导出 YAML 与 Fountain；改编风格可选（电影 / 话剧 / 短剧 / 分镜） |
+| **长文规模化** | 超长章节按段落自动切块，突破单次上下文限制；块间用"滚动提要"保叙事连续（提要复用已抽场景的 summary，不额外烧 token） |
+| **交互式精修** | 作者拿到初稿后，可对单个场景下达修改指令（如"改成外景雨夜"）做局部重生成，保持人物一致、保留来源溯源 |
 
 ---
 
@@ -109,6 +111,30 @@ $bytes = [Text.Encoding]::UTF8.GetBytes($novel)
 Invoke-WebRequest "http://localhost:8080/api/screenplay/convert?format=yaml" `
   -Method Post -Body $bytes -ContentType "text/plain; charset=utf-8" `
   -OutFile screenplay.yml
+```
+
+### 交互式精修
+
+`POST /api/screenplay/refine`（JSON 进出）：对单个场景按指令局部重生成，保持人物一致、保留 id 与来源出处。
+
+```json
+{
+  "scene": { "id": "S1", "heading": {...}, "action": [...], "dialogue": [...], "source": {...} },
+  "characters": [ { "name": "沈砚", "aliases": ["沈三郎"], "description": "..." } ],
+  "instruction": "把这场改成外景雨夜，并让台词更冷峻"
+}
+```
+
+返回精修后的 scene（JSON），响应头 `X-Validation-Warnings` 为该场体检残留问题数。
+
+### 长文规模化配置
+
+超长章节会自动按段落切块（块间用滚动提要保连续）。块大小可调：
+
+```yaml
+screenplay:
+  chunk:
+    max-chars: 1500   # 单块最大字符数，按需调整
 ```
 
 ---

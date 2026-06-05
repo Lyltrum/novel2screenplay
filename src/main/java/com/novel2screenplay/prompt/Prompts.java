@@ -4,6 +4,8 @@ import com.novel2screenplay.model.Chapter;
 import com.novel2screenplay.model.Character;
 import com.novel2screenplay.model.StoryBible;
 
+import java.util.List;
+
 /**
  * 只负责：集中存放并拼装 prompt 文本（逻辑与 prompt 分离）。
  * 所有调用模型的提示词都在此一处维护，便于迭代调质量。
@@ -35,20 +37,31 @@ public final class Prompts {
             【人物登记表】（用于人名归一）
             %s
 
+            【前情提要】（此前已改编的剧情，用于保持叙事连续；不要重复已写过的场景）
+            %s
+
             【本章正文】（第 %d 章：%s）
             %s
             """;
 
-    /** 拼装单章的场景抽取 prompt。styleGuidance 为风格化改编指引（可空）。 */
+    /**
+     * 拼装单章/单块的场景抽取 prompt。
+     * styleGuidance 为风格化改编指引（可空）；priorSynopsis 为前情提要（长文分块时保连续，可空）。
+     */
     public static String sceneExtraction(Chapter chapter, StoryBible bible,
-                                         String style, String styleGuidance) {
+                                         String style, String styleGuidance, String priorSynopsis) {
         return SCENE_EXTRACTION.formatted(
                 style,
                 styleGuidance == null ? "" : styleGuidance,
                 renderBible(bible),
+                isBlank(priorSynopsis) ? "（无，从头开始）" : priorSynopsis,
                 chapter.index(),
                 chapter.title(),
                 chapter.text());
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     private static final String BIBLE_EXTRACTION = """
@@ -101,6 +114,35 @@ public final class Prompts {
     /** 拼装"带问题清单修复剧本"的 prompt（自检修复闭环）。 */
     public static String repair(String issues, String currentYaml) {
         return REPAIR.formatted(issues, currentYaml);
+    }
+
+    private static final String REFINE = """
+            你是专业编剧，请根据作者的修改指令，对下面这一个剧本场景做精修。
+
+            【修改指令】
+            %s
+
+            【要求】
+            - 只按指令修改，指令未涉及的内容尽量保持不变。
+            - 保持人物称呼与登记表一致；不要引入登记表外的新角色。
+            - time_of_day 用中文（清晨/白天/黄昏/夜晚/午夜/黎明）；不要产生空台词。
+            - 返回修改后的这一个场景（场景 id 与来源出处由程序保留，你无需关心）。
+
+            【人物登记表】
+            %s
+
+            【当前场景(YAML)】
+            %s
+            """;
+
+    /** 拼装"按指令精修单个场景"的 prompt（交互式精修）。 */
+    public static String refine(String instruction, List<Character> characters, String sceneYaml) {
+        String roster = renderBible(new StoryBible(
+                characters == null ? List.of() : characters, List.of()));
+        return REFINE.formatted(
+                isBlank(instruction) ? "（无具体指令，请做合理润色）" : instruction.strip(),
+                roster,
+                sceneYaml);
     }
 
     private static String renderBible(StoryBible bible) {

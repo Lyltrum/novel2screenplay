@@ -40,7 +40,7 @@ class SceneExtractionServiceLiveTest {
         List<Chapter> chapters = splitter.split(novel);
         assertThat(chapters).hasSizeGreaterThanOrEqualTo(3);
 
-        List<Scene> scenes = extractor.extract(chapters.get(0), StoryBible.empty(), "电影");
+        List<Scene> scenes = extractor.extract(chapters.get(0), StoryBible.empty(), "电影", "");
         assertThat(scenes).isNotEmpty();
 
         Screenplay screenplay = new Screenplay(
