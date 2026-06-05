@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>墨转幕 · 小说转剧本</title>
+<!--
+  可选 demo 前端，非课题要求，独立单页，可删。
+  需先启动后端（http://localhost:8080），再直接用浏览器打开本文件。
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Noto+Serif+SC:wght@400;600;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<style>
+  :root{
+    --stage:#14110d;
+    --stage-2:#1d1813;
+    --amber:#e3a44a;
+    --amber-soft:#f0c987;
+    --ivory:#f4ecdc;
+    --script:#f7f4ee;
+    --ink:#23201b;
+    --muted:#8a7f6d;
+    --line:rgba(227,164,74,.22);
+    --rule:#d8cfbd;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Noto Serif SC",serif;
+    background:var(--stage);
+    color:var(--ivory);
+    overflow:hidden;
+    /* 胶片颗粒 */
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(227,164,74,.06), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(227,164,74,.05), transparent 45%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9;opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ── 顶栏 ── */
+  header{
+    height:74px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 30px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,var(--stage-2),transparent);
+    position:relative;z-index:5;
+  }
+  .brand{display:flex;align-items:baseline;gap:14px}
+  .brand h1{
+    font-family:"Cormorant Garamond",serif;font-weight:600;font-size:30px;
+    letter-spacing:.5px;color:var(--script);
+  }
+  .brand h1 .zh{font-family:"Noto Serif SC";font-weight:900;color:var(--amber);margin-right:6px}
+  .brand .tag{font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase}
+  .reel{display:flex;gap:6px;align-items:center}
+  .reel i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--amber);opacity:.55}
+
+  /* ── 控制条 ── */
+  .controls{display:flex;align-items:center;gap:16px}
+  .field{display:flex;align-items:center;gap:8px}
+  .field label{font-size:12px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+  select{
+    font-family:inherit;font-size:14px;color:var(--ivory);
+    background:var(--stage-2);border:1px solid var(--line);border-radius:2px;
+    padding:7px 12px;cursor:pointer;outline:none;transition:border-color .2s;
+  }
+  select:hover{border-color:var(--amber)}
+  .seg{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+  .seg button{
+    font-family:inherit;font-size:13px;padding:7px 13px;background:transparent;
+    color:var(--muted);border:none;cursor:pointer;transition:all .18s;letter-spacing:1px;
+  }
+  .seg button.on{background:var(--amber);color:var(--stage);font-weight:600}
+
+  .convert{
+    font-family:"Noto Serif SC";font-weight:600;font-size:15px;letter-spacing:4px;
+    color:var(--stage);background:var(--amber);border:none;border-radius:2px;
+    padding:10px 26px;cursor:pointer;position:relative;overflow:hidden;
+    transition:transform .15s, box-shadow .2s;box-shadow:0 0 0 rgba(227,164,74,0);
+  }
+  .convert:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 22px rgba(227,164,74,.3)}
+  .convert:disabled{opacity:.55;cursor:wait}
+
+  /* ── 工作台 ── */
+  main{display:flex;height:calc(100vh - 74px);position:relative}
+  .pane{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
+  .pane-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 28px 10px;
+  }
+  .pane-head .t{font-family:"Cormorant Garamond";font-style:italic;font-size:19px;color:var(--amber-soft)}
+  .pane-head .meta{font-size:12px;color:var(--muted);letter-spacing:1px}
+
+  /* 中缝 · 胶片孔 */
+  .divider{
+    width:30px;flex:0 0 30px;display:flex;flex-direction:column;align-items:center;
+    justify-content:space-around;padding:18px 0;
+    background:repeating-linear-gradient(180deg,var(--stage-2) 0 14px,transparent 14px 30px);
+    border-left:1px solid var(--line);border-right:1px solid var(--line);
+  }
+  .divider i{width:10px;height:14px;border-radius:2px;background:var(--stage);
+    box-shadow:inset 0 0 0 1px var(--line)}
+
+  /* 左：手稿 */
+  .manuscript{
+    flex:1;margin:0 22px 22px;padding:30px 34px;border:none;resize:none;outline:none;
+    background:var(--ivory);color:var(--ink);border-radius:3px;
+    font-family:"Noto Serif SC";font-size:16px;line-height:2;
+    box-shadow:0 18px 40px rgba(0,0,0,.45);
+    background-image:linear-gradient(transparent 0 calc(2em - 1px), rgba(120,100,70,.08) calc(2em - 1px) 2em);
+    background-attachment:local;
+  }
+  .manuscript::placeholder{color:#b3a587}
+
+  /* 右：剧本台 */
+  .stage-wrap{flex:1;margin:0 22px 22px;border-radius:3px;overflow:hidden;
+    box-shadow:0 18px 40px rgba(0,0,0,.45);background:var(--script)}
+  .script{height:100%;overflow-y:auto;padding:42px 52px;color:var(--ink);
+    font-family:"Noto Serif SC";}
+  .script::-webkit-scrollbar{width:10px}
+  .script::-webkit-scrollbar-thumb{background:#cfc4ad;border-radius:5px}
+
+  .empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:18px;color:#b8ad95;text-align:center}
+  .empty .clap{font-size:54px;filter:grayscale(.2)}
+  .empty p{font-size:15px;letter-spacing:1px}
+
+  /* 剧本标题区 */
+  .sp-title{text-align:center;border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:8px}
+  .sp-title h2{font-weight:900;font-size:30px;letter-spacing:6px;color:var(--ink)}
+  .sp-title .logline{font-family:"Cormorant Garamond";font-style:italic;font-size:18px;
+    color:#6a6253;margin-top:10px}
+  .sp-title .badges{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+  .badge{font-size:12px;letter-spacing:1px;padding:4px 11px;border:1px solid var(--rule);
+    border-radius:2px;color:#7a7163;background:#fff}
+  .badge.warn{border-color:#c8884a;color:#a85f1e;background:#fbf1e3}
+  .badge.ok{border-color:#7d9b6d;color:#4e7038;background:#eef4e8}
+
+  /* 人物表 */
+  .roster{margin:26px 0 10px;padding:16px 20px;background:#efe9dc;border-left:3px solid var(--amber)}
+  .roster h3{font-size:12px;letter-spacing:3px;color:#8a7f6d;text-transform:uppercase;margin-bottom:10px}
+  .roster .person{font-size:14px;line-height:1.8}
+  .roster .person b{color:var(--ink)}
+  .roster .person .alias{color:#9a8f78;font-size:13px}
+
+  /* 场景 */
+  .scene{margin:30px 0;font-family:"JetBrains Mono","Noto Serif SC",monospace}
+  .slug{display:flex;align-items:center;gap:12px;font-weight:600;font-size:15px;
+    letter-spacing:1.5px;color:var(--ink);text-transform:uppercase}
+  .slug .sid{font-family:"Cormorant Garamond";font-style:italic;text-transform:none;
+    font-size:15px;color:#fff;background:var(--ink);padding:1px 9px;border-radius:2px;letter-spacing:0}
+  .summary{font-family:"Noto Serif SC";font-style:italic;color:#857b6a;font-size:13.5px;margin:6px 0 14px}
+  .action{font-family:"Noto Serif SC";font-size:15px;line-height:1.85;margin:10px 0;color:#2c281f}
+  .dlg{margin:14px 0;text-align:center}
+  .dlg .char{font-weight:600;letter-spacing:2px;font-size:14px;color:var(--ink)}
+  .dlg .paren{font-family:"Noto Serif SC";font-style:italic;color:#8a8070;font-size:13px;margin:1px 0}
+  .dlg .line{font-family:"Noto Serif SC";font-size:15.5px;line-height:1.7;color:#2c281f;
+    max-width:60%;margin:2px auto 0}
+  .trans{text-align:right;font-weight:600;letter-spacing:2px;color:#6a6253;margin:12px 0}
+
+  /* 旁注：来源 + 编剧笔记 */
+  .notes{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+  .note{font-family:"Noto Serif SC";font-size:12px;border-radius:2px;padding:7px 11px;line-height:1.6;max-width:48%}
+  .note.src{background:#f0ece1;border-left:2px solid #bda06a;color:#6e6452}
+  .note.craft{background:#eef1ea;border-left:2px solid #8aa06f;color:#566048}
+  .note .k{font-weight:600;letter-spacing:1px;opacity:.7;text-transform:uppercase;font-size:10px;display:block;margin-bottom:2px}
+  .fn{display:inline-block;font-size:10px;letter-spacing:1px;padding:1px 7px;border-radius:2px;
+    background:#8aa06f;color:#fff;margin-left:6px;vertical-align:middle}
+
+  /* 原始文本视图 */
+  pre.raw{font-family:"JetBrains Mono",monospace;font-size:13px;line-height:1.7;color:#2c281f;white-space:pre-wrap;word-break:break-word}
+
+  /* 加载态 · 放映机 */
+  .loading{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;color:#7a7163}
+  .projector{width:60px;height:60px;border:3px solid #ddd3bd;border-top-color:var(--amber);border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading p{letter-spacing:2px;font-size:14px}
+  .loading .sub{font-size:12px;color:#a89d86}
+
+  .err{margin:20px;padding:16px 20px;background:#fbe9e6;border-left:3px solid #c0492f;color:#8a3320;font-size:14px;border-radius:2px}
+
+  @media(max-width:880px){
+    main{flex-direction:column;height:auto}
+    .divider{width:100%;flex-direction:row;height:24px;padding:0 18px}
+    body{overflow:auto}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1><span class="zh">墨转幕</span><span style="font-size:20px;color:var(--muted)">NOVEL → SCREENPLAY</span></h1>
+  </div>
+  <div class="controls">
+    <div class="field">
+      <label>风格</label>
+      <select id="style">
+        <option>电影</option><option>话剧</option><option>短剧</option><option>分镜</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>视图</label>
+      <div class="seg" id="view">
+        <button data-v="script" class="on">剧本</button>
+        <button data-v="yaml">YAML</button>
+        <button data-v="fountain">Fountain</button>
+      </div>
+    </div>
+    <button class="convert" id="go">转 换</button>
+  </div>
+</header>
+
+<main>
+  <section class="pane">
+    <div class="pane-head">
+      <span class="t">手稿 · Manuscript</span>
+      <span class="meta" id="count">0 字</span>
+    </div>
+    <textarea class="manuscript" id="novel" placeholder="在此粘贴小说原文（建议 3 章以上，用「第X章」分隔）……
+
+左侧是你的小说，点「转换」，右侧便长出一部剧本。"></textarea>
+  </section>
+
+  <div class="divider"><i></i><i></i><i></i><i></i><i></i></div>
+
+  <section class="pane">
+    <div class="pane-head">
+      <span class="t">剧本 · Screenplay</span>
+      <span class="meta" id="ometa"></span>
+    </div>
+    <div class="stage-wrap">
+      <div class="script" id="out">
+        <div class="empty">
+          <div class="clap">🎬</div>
+          <p>右边的舞台还空着。<br/>粘贴小说，按下「转换」。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const API = "http://localhost:8080/api/screenplay/convert";
+const $ = s => document.querySelector(s);
+const novel = $("#novel"), out = $("#out"), go = $("#go");
+let view = "script";
+let lastWarn = null;
+
+novel.addEventListener("input", () => {
+  $("#count").textContent = novel.value.length.toLocaleString() + " 字";
+});
+
+$("#view").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  [...$("#view").children].forEach(x => x.classList.remove("on"));
+  b.classList.add("on"); view = b.dataset.v;
+  if(novel.value.trim()) convert();
+});
+
+go.addEventListener("click", convert);
+
+function esc(s){return (s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+async function convert(){
+  const text = novel.value.trim();
+  if(!text){ out.innerHTML = errBox("请先在左侧粘贴小说原文。"); return; }
+  const style = $("#style").value;
+  const format = view === "fountain" ? "fountain" : "yaml";
+  go.disabled = true;
+  out.innerHTML = loadingBox(style);
+  try{
+    const url = `${API}?style=${encodeURIComponent(style)}&format=${format}`;
+    const res = await fetch(url, {
+      method:"POST",
+      headers:{"Content-Type":"text/plain; charset=utf-8"},
+      body:text
+    });
+    if(!res.ok) throw new Error("后端返回 " + res.status);
+    lastWarn = res.headers.get("X-Validation-Warnings");
+    const body = await res.text();
+    $("#ometa").textContent = lastWarn!=null ? `校验告警 ${lastWarn}` : "";
+    if(view === "fountain")      out.innerHTML = `<pre class="raw">${esc(body)}</pre>`;
+    else if(view === "yaml")     out.innerHTML = `<pre class="raw">${esc(body)}</pre>`;
+    else                         renderScreenplay(body);
+  }catch(err){
+    out.innerHTML = errBox("转换失败：" + err.message +
+      "<br/><span style='font-size:12px;color:#a85f3a'>请确认后端已启动（localhost:8080），且已配置 API Key。</span>");
+  }finally{
+    go.disabled = false;
+  }
+}
+
+function renderScreenplay(yamlText){
+  let sp;
+  try{ sp = jsyaml.load(yamlText); }
+  catch(e){ out.innerHTML = `<pre class="raw">${esc(yamlText)}</pre>`; return; }
+  if(!sp || !sp.scenes){ out.innerHTML = `<pre class="raw">${esc(yamlText)}</pre>`; return; }
+
+  const warnBadge = lastWarn==="0"
+    ? `<span class="badge ok">自检通过 · 0 告警</span>`
+    : (lastWarn!=null ? `<span class="badge warn">校验告警 ${lastWarn}</span>` : "");
+
+  let html = `<div class="sp-title">
+    <h2>${esc(sp.title||"无题")}</h2>
+    ${sp.logline?`<div class="logline">${esc(sp.logline)}</div>`:""}
+    <div class="badges">
+      <span class="badge">${esc(sp.style||"电影")}</span>
+      <span class="badge">${sp.scenes.length} 场</span>
+      ${warnBadge}
+    </div>
+  </div>`;
+
+  if(Array.isArray(sp.characters) && sp.characters.length){
+    html += `<div class="roster"><h3>人物表 · Characters</h3>`;
+    for(const c of sp.characters){
+      const al = (c.aliases&&c.aliases.length)?` <span class="alias">（${c.aliases.map(esc).join(" / ")}）</span>`:"";
+      html += `<div class="person"><b>${esc(c.name)}</b>${al}　${esc(c.description||"")}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  for(const s of sp.scenes){
+    html += renderScene(s);
+  }
+  out.innerHTML = html;
+}
+
+const FN = {
+  ADVANCE_PLOT:"推进剧情", REVEAL_CHARACTER:"塑造人物",
+  ESCALATE_CONFLICT:"升级冲突", SETUP:"铺垫", PAYOFF:"回收"
+};
+
+function renderScene(s){
+  const h = s.heading||{};
+  const slug = `${(h.int_ext||"INT")}. ${esc(h.location||"")}${h.time_of_day?" — "+esc(h.time_of_day):""}`;
+  let html = `<div class="scene">
+    <div class="slug"><span class="sid">${esc(s.id||"")}</span><span>${slug}</span></div>`;
+  if(s.summary) html += `<div class="summary">${esc(s.summary)}</div>`;
+  for(const a of (s.action||[])) html += `<div class="action">${esc(a)}</div>`;
+  for(const d of (s.dialogue||[])){
+    html += `<div class="dlg">
+      <div class="char">${esc(d.character)}</div>
+      ${d.parenthetical?`<div class="paren">（${esc(d.parenthetical)}）</div>`:""}
+      <div class="line">${esc(d.line)}</div>
+    </div>`;
+  }
+  if(s.transition) html += `<div class="trans">${esc(s.transition)} →</div>`;
+
+  // 旁注：来源 + 编剧笔记
+  let notes = "";
+  if(s.source){
+    notes += `<div class="note src"><span class="k">来源 · 第${s.source.chapter}章</span>${esc(s.source.excerpt)}</div>`;
+  }
+  if(s.craft){
+    const c = s.craft;
+    const fn = c.function?`<span class="fn">${FN[c.function]||c.function}</span>`:"";
+    notes += `<div class="note craft"><span class="k">编剧笔记 ${fn}</span>
+      <b>目标</b> ${esc(c.objective||"—")}<br/>
+      <b>冲突</b> ${esc(c.conflict||"—")}<br/>
+      <b>转折</b> ${esc(c.turn||"—")}</div>`;
+  }
+  if(notes) html += `<div class="notes">${notes}</div>`;
+
+  html += `</div>`;
+  return html;
+}
+
+function loadingBox(style){
+  return `<div class="loading">
+    <div class="projector"></div>
+    <p>正在把小说改编成「${style}」剧本…</p>
+    <div class="sub">逐章登记人物 → 切分场景 → 自检修复，约需 1–2 分钟</div>
+  </div>`;
+}
+function errBox(msg){ return `<div class="err">${msg}</div>`; }
+</script>
+</body>
+</html>

@@ -154,6 +154,13 @@ mvn test -Dlive=true -Dtest=ConversionPipelineLiveTest
 
 ---
 
+## 🖥️ 可选 demo 前端（非课题要求）
+
+`web/index.html` 是一个独立单页（翻译器风格：左边粘贴小说，右边渲染剧本），仅供直观演示，**不属于课题、可删**。
+
+用法：先启动后端，再用浏览器直接打开 `web/index.html`。支持风格切换（电影/话剧/短剧/分镜）与视图切换（剧本/YAML/Fountain），并显示校验告警数。
+> 跨域由 `config/WebCorsConfig`（仅 dev、可删）放开。
+
 ## 📁 示例
 
 - 输入：[`src/main/resources/sample/novel.txt`](src/main/resources/sample/novel.txt)（3 章原创短篇）
