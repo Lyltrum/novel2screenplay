@@ -43,6 +43,35 @@ public final class Prompts {
                 chapter.text());
     }
 
+    private static final String BIBLE_EXTRACTION = """
+            从下面的小说章节中，抽取「登场人物」与「地点」，用于建立剧本的人物登记表。
+            - 人物：每人给出 主名(name) + 别名/称呼列表(aliases，如绰号、尊称、自称) + 一句话设定(description)。
+            - 地点：本章出现的主要场景地点(locations)。
+            - 只抽取本章实际出现的信息，不要杜撰章节中没有的人物或设定。
+
+            【本章正文】（第 %d 章：%s）
+            %s
+            """;
+
+    /** 拼装单章的人物/地点登记 prompt。 */
+    public static String bibleExtraction(Chapter chapter) {
+        return BIBLE_EXTRACTION.formatted(chapter.index(), chapter.title(), chapter.text());
+    }
+
+    private static final String TITLE_LOGLINE = """
+            根据下面的剧情概要，为这部「%s」剧本拟定：
+            - title：一个简洁有力、贴合内容的剧名。
+            - logline：一句话故事梗概（30 字以内，点明主角、目标与核心冲突）。
+
+            【剧情概要】（按场景顺序）
+            %s
+            """;
+
+    /** 拼装剧名/梗概生成 prompt（基于各场景概要，控制 token）。 */
+    public static String titleLogline(String synopsis, String style) {
+        return TITLE_LOGLINE.formatted(style, synopsis);
+    }
+
     private static String renderBible(StoryBible bible) {
         if (bible == null || bible.characters() == null || bible.characters().isEmpty()) {
             return "（暂无，以本章为准）";
