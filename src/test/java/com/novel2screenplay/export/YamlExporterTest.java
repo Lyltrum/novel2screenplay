@@ -5,6 +5,8 @@ import com.novel2screenplay.model.DialogueLine;
 import com.novel2screenplay.model.Heading;
 import com.novel2screenplay.model.IntExt;
 import com.novel2screenplay.model.Scene;
+import com.novel2screenplay.model.SceneCraft;
+import com.novel2screenplay.model.SceneFunction;
 import com.novel2screenplay.model.Screenplay;
 import com.novel2screenplay.model.SourceRef;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,11 @@ class YamlExporterTest {
         assertThat(yaml).contains("source:");
         assertThat(yaml).contains("chapter:");
         assertThat(yaml).contains("excerpt:");
+        // 编剧笔记注释层在
+        assertThat(yaml).contains("craft:");
+        assertThat(yaml).contains("objective:");
+        assertThat(yaml).contains("turn:");
+        assertThat(yaml).contains("REVEAL_CHARACTER");
         // 人物登记表的别名在
         assertThat(yaml).contains("aliases:");
     }
@@ -55,7 +62,9 @@ class YamlExporterTest {
                 List.of("油灯昏黄，李白独坐角落，剑横膝上。"),
                 List.of(dialogue),
                 "CUT TO:",
-                source);
+                source,
+                new SceneCraft("借酒排遣胸中郁结", "抱负与世道的落差", "举杯却未饮，郁结更深",
+                        SceneFunction.REVEAL_CHARACTER));
         Character liBai = new Character("李白", List.of("太白", "谪仙人"), "唐代诗人，豪放不羁，仗剑远游。");
         return new Screenplay(
                 "侠客行",

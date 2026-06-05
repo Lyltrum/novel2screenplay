@@ -9,6 +9,7 @@ import java.util.List;
  * action：可拍摄的动作/场景描述段落（叙述已转写为画面）。
  * transition：转场提示（如「CUT TO:」），可空。
  * source：来源可追溯（亮点 P1），指向原文出处。
+ * craft：编剧笔记（戏剧注释层），与可拍摄正文分离，说明这场戏的目标/冲突/转折/职能。
  */
 public record Scene(
         String id,
@@ -17,6 +18,7 @@ public record Scene(
         List<String> action,
         List<DialogueLine> dialogue,
         String transition,
-        SourceRef source
+        SourceRef source,
+        SceneCraft craft
 ) {
 }

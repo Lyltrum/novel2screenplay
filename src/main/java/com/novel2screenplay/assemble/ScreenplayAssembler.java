@@ -42,6 +42,7 @@ public class ScreenplayAssembler {
                 scene.action(),
                 scene.dialogue(),
                 scene.transition(),
-                scene.source());
+                scene.source(),
+                scene.craft());
     }
 }

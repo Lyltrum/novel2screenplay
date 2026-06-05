@@ -37,6 +37,6 @@ class ScreenplayAssemblerTest {
     }
 
     private Scene sceneWithId(String id) {
-        return new Scene(id, null, "概要", List.of(), List.of(), null, new SourceRef(1, "原文"));
+        return new Scene(id, null, "概要", List.of(), List.of(), null, new SourceRef(1, "原文"), null);
     }
 }

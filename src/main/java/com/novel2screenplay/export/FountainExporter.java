@@ -4,6 +4,7 @@ import com.novel2screenplay.model.DialogueLine;
 import com.novel2screenplay.model.Heading;
 import com.novel2screenplay.model.IntExt;
 import com.novel2screenplay.model.Scene;
+import com.novel2screenplay.model.SceneCraft;
 import com.novel2screenplay.model.Screenplay;
 import com.novel2screenplay.model.SourceRef;
 import org.springframework.stereotype.Component;
@@ -44,6 +45,7 @@ public class FountainExporter {
         sb.append(sluglineOf(scene)).append("\n\n");
 
         appendSourceNote(sb, scene.source());
+        appendCraftNote(sb, scene.craft());
 
         if (scene.action() != null) {
             for (String action : scene.action()) {
@@ -89,6 +91,28 @@ public class FountainExporter {
             sb.append("[[来源 第").append(source.chapter()).append("章：")
                     .append(source.excerpt().strip()).append("]]\n\n");
         }
+    }
+
+    /** 编剧笔记以 Fountain 笔记 [[ ]] 形式保留（渲染时通常隐藏，但随剧本传递）。 */
+    private void appendCraftNote(StringBuilder sb, SceneCraft craft) {
+        if (craft == null) {
+            return;
+        }
+        StringBuilder note = new StringBuilder("[[编剧笔记");
+        if (notBlank(craft.objective())) {
+            note.append(" 目标:").append(craft.objective().strip());
+        }
+        if (notBlank(craft.conflict())) {
+            note.append(" 冲突:").append(craft.conflict().strip());
+        }
+        if (notBlank(craft.turn())) {
+            note.append(" 转折:").append(craft.turn().strip());
+        }
+        if (craft.function() != null) {
+            note.append(" 职能:").append(craft.function());
+        }
+        note.append("]]");
+        sb.append(note).append("\n\n");
     }
 
     private void appendDialogue(StringBuilder sb, DialogueLine line) {

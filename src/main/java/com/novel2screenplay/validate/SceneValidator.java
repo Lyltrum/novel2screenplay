@@ -4,6 +4,7 @@ import com.novel2screenplay.model.Character;
 import com.novel2screenplay.model.DialogueLine;
 import com.novel2screenplay.model.Heading;
 import com.novel2screenplay.model.Scene;
+import com.novel2screenplay.model.SceneCraft;
 import com.novel2screenplay.model.Screenplay;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -24,6 +26,13 @@ import java.util.regex.Pattern;
 public class SceneValidator {
 
     private static final Pattern CJK = Pattern.compile("[\\u4e00-\\u9fff]");
+
+    /** action 里的心理描写/抽象判断标记（"展示而非讲述"的反例），命中即需外化。 */
+    private static final Pattern INTERIORITY = Pattern.compile(
+            "心想|心里|心中|内心|心头|暗想|暗自|暗暗|思忖|寻思|意识到|回忆起|想起|不由得想");
+
+    /** 单句对白超过此字数视为疑似信息倾倒。 */
+    private static final int EXPOSITION_MAX_CHARS = 80;
 
     /** 体检整部剧本（含顶层 title/logline 与每个场景）。 */
     public ValidationReport validate(Screenplay screenplay) {
@@ -54,8 +63,47 @@ public class SceneValidator {
         String id = scene.id();
         validateHeading(id, scene.heading(), issues);
         validateContent(id, scene, issues);
+        validateShowDontTell(id, scene.action(), issues);
         validateDialogue(id, scene.dialogue(), known, issues);
         validateSource(id, scene, issues);
+        validateCraft(id, scene.craft(), issues);
+    }
+
+    /** 展示而非讲述：action 不应含心理描写/抽象判断，须外化为可拍摄画面。 */
+    private void validateShowDontTell(String id, List<String> action, List<ValidationIssue> issues) {
+        if (action == null) {
+            return;
+        }
+        for (String line : action) {
+            if (line == null) {
+                continue;
+            }
+            Matcher m = INTERIORITY.matcher(line);
+            if (m.find()) {
+                issues.add(new ValidationIssue(id, "action",
+                        "动作含心理描写「" + m.group() + "」，应外化为可拍摄的画面/动作/表情"));
+            }
+        }
+    }
+
+    /** 编剧笔记完整性：每场须有目标/冲突/转折/职能。 */
+    private void validateCraft(String id, SceneCraft craft, List<ValidationIssue> issues) {
+        if (craft == null) {
+            issues.add(new ValidationIssue(id, "craft", "缺少编剧笔记(目标/冲突/转折/职能)"));
+            return;
+        }
+        if (isBlank(craft.objective())) {
+            issues.add(new ValidationIssue(id, "craft.objective", "缺少本场目标(角色想要什么)"));
+        }
+        if (isBlank(craft.conflict())) {
+            issues.add(new ValidationIssue(id, "craft.conflict", "缺少本场冲突(阻碍是什么)"));
+        }
+        if (isBlank(craft.turn())) {
+            issues.add(new ValidationIssue(id, "craft.turn", "缺少本场转折(无变化的死场景应合并)"));
+        }
+        if (craft.function() == null) {
+            issues.add(new ValidationIssue(id, "craft.function", "缺少戏剧职能"));
+        }
     }
 
     private void validateHeading(String id, Heading heading, List<ValidationIssue> issues) {
@@ -94,6 +142,9 @@ public class SceneValidator {
         for (DialogueLine line : dialogue) {
             if (isBlank(line.line())) {
                 issues.add(new ValidationIssue(id, "dialogue.line", "存在空台词"));
+            } else if (line.line().strip().length() > EXPOSITION_MAX_CHARS) {
+                issues.add(new ValidationIssue(id, "dialogue.line",
+                        "对白过长(" + line.line().strip().length() + "字)，疑似信息倾倒，建议拆短或外化"));
             }
             if (isBlank(line.character())) {
                 issues.add(new ValidationIssue(id, "dialogue.character", "对白缺少说话角色"));

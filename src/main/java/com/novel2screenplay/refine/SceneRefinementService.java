@@ -35,7 +35,7 @@ public class SceneRefinementService {
                 .call()
                 .entity(Scene.class);
 
-        // 保留原 id 与来源出处（精修不改变身份与溯源）
+        // 保留原 id 与来源出处（精修不改变身份与溯源）；craft 随精修更新
         return new Scene(
                 scene.id(),
                 refined.heading(),
@@ -43,6 +43,7 @@ public class SceneRefinementService {
                 refined.action(),
                 refined.dialogue(),
                 refined.transition(),
-                scene.source());
+                scene.source(),
+                refined.craft());
     }
 }

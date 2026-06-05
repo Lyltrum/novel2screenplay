@@ -54,6 +54,7 @@ public class SceneExtractionService {
                 scene.action(),
                 scene.dialogue(),
                 scene.transition(),
-                source);
+                source,
+                scene.craft());
     }
 }
