@@ -112,6 +112,6 @@ public class ScreenplayController {
         if (title == null || title.isBlank()) {
             return sp;
         }
-        return new Screenplay(title.strip(), sp.logline(), sp.style(), sp.characters(), sp.scenes());
+        return new Screenplay(sp.meta(), title.strip(), sp.logline(), sp.style(), sp.characters(), sp.scenes());
     }
 }

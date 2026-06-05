@@ -8,6 +8,7 @@ import com.novel2screenplay.model.Scene;
 import com.novel2screenplay.model.SceneCraft;
 import com.novel2screenplay.model.SceneFunction;
 import com.novel2screenplay.model.Screenplay;
+import com.novel2screenplay.model.ScreenplayMeta;
 import com.novel2screenplay.model.SourceRef;
 import org.junit.jupiter.api.Test;
 
@@ -31,8 +32,11 @@ class YamlExporterTest {
         // 字段名转蛇形：intExt -> int_ext，timeOfDay -> time_of_day
         assertThat(yaml).contains("int_ext:");
         assertThat(yaml).contains("time_of_day:");
-        // 枚举按名字输出
-        assertThat(yaml).contains("INT");
+        // int_ext 序列化为中文
+        assertThat(yaml).contains("内");
+        // 顶层溯源块
+        assertThat(yaml).contains("meta:");
+        assertThat(yaml).contains("source_chapters:");
         // 不带文档头 "---"
         assertThat(yaml).doesNotStartWith("---");
         // 中文内容保留
@@ -53,7 +57,7 @@ class YamlExporterTest {
 
     private Screenplay sampleScreenplay() {
         Heading heading = new Heading(IntExt.INT, "客栈大堂", "夜");
-        DialogueLine dialogue = new DialogueLine("李白", "(举杯)", "天生我材必有用。");
+        DialogueLine dialogue = new DialogueLine("李白", "(举杯)", "天生我材必有用。", null);
         SourceRef source = new SourceRef(1, "李白独坐客栈一角，举杯长叹……");
         Scene scene = new Scene(
                 "S1",
@@ -67,6 +71,7 @@ class YamlExporterTest {
                         SceneFunction.REVEAL_CHARACTER));
         Character liBai = new Character("李白", List.of("太白", "谪仙人"), "唐代诗人，豪放不羁，仗剑远游。");
         return new Screenplay(
+                new ScreenplayMeta(3, 1),
                 "侠客行",
                 "一个诗人仗剑天涯、以酒会友的故事。",
                 "电影",

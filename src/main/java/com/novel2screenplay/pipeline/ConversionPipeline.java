@@ -99,6 +99,7 @@ public class ConversionPipeline {
         TitleLogline titleLogline = titleLoglineService.generate(scenes, effectiveStyle);
 
         Screenplay screenplay = screenplayAssembler.assemble(
+                chapters.size(),
                 titleLogline.title(),
                 titleLogline.logline(),
                 effectiveStyle,

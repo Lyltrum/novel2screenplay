@@ -21,17 +21,20 @@ class ScreenplayAssemblerTest {
         Scene b = sceneWithId("1");
         Scene c = sceneWithId(null);
 
-        Screenplay sp = assembler.assemble("剧名", "梗概", "电影", List.of(), List.of(a, b, c));
+        Screenplay sp = assembler.assemble(3, "剧名", "梗概", "电影", List.of(), List.of(a, b, c));
 
         assertThat(sp.scenes()).extracting(Scene::id).containsExactly("S1", "S2", "S3");
         assertThat(sp.title()).isEqualTo("剧名");
         // 其余字段原样保留
         assertThat(sp.scenes().get(0).source().chapter()).isEqualTo(1);
+        // meta 由 assembler 计算填充
+        assertThat(sp.meta().sourceChapters()).isEqualTo(3);
+        assertThat(sp.meta().sceneCount()).isEqualTo(3);
     }
 
     @Test
     void nullCharactersBecomeEmptyList() {
-        Screenplay sp = assembler.assemble("t", "l", "电影", null, List.of());
+        Screenplay sp = assembler.assemble(0, "t", "l", "电影", null, List.of());
         assertThat(sp.characters()).isEmpty();
         assertThat(sp.scenes()).isEmpty();
     }

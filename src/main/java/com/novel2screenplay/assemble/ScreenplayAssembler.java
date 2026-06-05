@@ -3,6 +3,7 @@ package com.novel2screenplay.assemble;
 import com.novel2screenplay.model.Character;
 import com.novel2screenplay.model.Scene;
 import com.novel2screenplay.model.Screenplay;
+import com.novel2screenplay.model.ScreenplayMeta;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -15,7 +16,8 @@ import java.util.List;
 @Component
 public class ScreenplayAssembler {
 
-    public Screenplay assemble(String title,
+    public Screenplay assemble(int sourceChapters,
+                               String title,
                                String logline,
                                String style,
                                List<Character> characters,
@@ -26,7 +28,9 @@ public class ScreenplayAssembler {
             numbered.add(withId(scene, "S" + seq));
             seq++;
         }
+        ScreenplayMeta meta = new ScreenplayMeta(sourceChapters, numbered.size());
         return new Screenplay(
+                meta,
                 title,
                 logline,
                 style,

@@ -75,6 +75,18 @@ public class FountainExporter {
         return prefix + " " + location + time + number;
     }
 
+    /** 对白类型映射为 Fountain 角色扩展标记：旁白/内心→(V.O.)，画外→(O.S.)，普通→无。 */
+    private String extensionOf(com.novel2screenplay.model.DialogueType type) {
+        if (type == null) {
+            return "";
+        }
+        return switch (type) {
+            case NARRATION, INNER -> " (V.O.)";
+            case OFF_SCREEN -> " (O.S.)";
+            case NORMAL -> "";
+        };
+    }
+
     private String intExtPrefix(IntExt intExt) {
         if (intExt == null) {
             return "INT.";
@@ -119,7 +131,7 @@ public class FountainExporter {
         if (line == null || !notBlank(line.character()) || !notBlank(line.line())) {
             return;
         }
-        sb.append('@').append(line.character().strip()).append('\n');
+        sb.append('@').append(line.character().strip()).append(extensionOf(line.type())).append('\n');
         if (notBlank(line.parenthetical())) {
             String p = line.parenthetical().strip();
             if (!p.startsWith("(") && !p.startsWith("（")) {

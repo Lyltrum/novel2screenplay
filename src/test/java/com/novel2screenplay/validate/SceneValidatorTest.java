@@ -22,7 +22,7 @@ class SceneValidatorTest {
 
     @Test
     void cleanScreenplayHasNoIssues() {
-        Screenplay sp = new Screenplay("剧名", "梗概", "电影",
+        Screenplay sp = new Screenplay(null, "剧名", "梗概", "电影",
                 List.of(new Character("沈砚", List.of("沈三郎"), "剑客")),
                 List.of(validScene("S1", "沈砚")));
 
@@ -34,7 +34,7 @@ class SceneValidatorTest {
         Scene scene = new Scene("S1",
                 new Heading(IntExt.EXT, "后巷", "Night"),
                 "概要", List.of("黑影翻墙"), List.of(), "", new SourceRef(2, "原文"), null);
-        Screenplay sp = new Screenplay("t", "l", "电影", List.of(), List.of(scene));
+        Screenplay sp = new Screenplay(null, "t", "l", "电影", List.of(), List.of(scene));
 
         ValidationReport report = validator.validate(sp);
 
@@ -47,9 +47,9 @@ class SceneValidatorTest {
         Scene scene = new Scene("S1",
                 new Heading(IntExt.INT, "大堂", "夜晚"),
                 "概要", List.of(),
-                List.of(new DialogueLine("路人甲", "", "你好")),
+                List.of(new DialogueLine("路人甲", "", "你好", null)),
                 "", new SourceRef(1, "原文"), null);
-        Screenplay sp = new Screenplay("t", "l", "电影",
+        Screenplay sp = new Screenplay(null, "t", "l", "电影",
                 List.of(new Character("沈砚", List.of(), "剑客")),
                 List.of(scene));
 
@@ -65,7 +65,7 @@ class SceneValidatorTest {
         Scene scene = new Scene("S1",
                 new Heading(IntExt.INT, "大堂", "夜晚"),
                 "概要", List.of(), List.of(), "", null, null);
-        Screenplay sp = new Screenplay("t", "l", "电影", List.of(), List.of(scene));
+        Screenplay sp = new Screenplay(null, "t", "l", "电影", List.of(), List.of(scene));
 
         ValidationReport report = validator.validate(sp);
 
@@ -82,7 +82,7 @@ class SceneValidatorTest {
                 List.of(),
                 "", new SourceRef(1, "原文"),
                 new SceneCraft("查探", "对方戒备", "起疑", SceneFunction.SETUP));
-        Screenplay sp = new Screenplay("t", "l", "电影", List.of(), List.of(scene));
+        Screenplay sp = new Screenplay(null, "t", "l", "电影", List.of(), List.of(scene));
 
         ValidationReport report = validator.validate(sp);
 
@@ -97,10 +97,10 @@ class SceneValidatorTest {
         Scene scene = new Scene("S1",
                 new Heading(IntExt.INT, "客栈", "夜晚"),
                 "概要", List.of("两人对坐。"),
-                List.of(new DialogueLine("沈砚", "", longLine)),
+                List.of(new DialogueLine("沈砚", "", longLine, null)),
                 "", new SourceRef(1, "原文"),
                 new SceneCraft("摊牌", "对方否认", "真相揭开", SceneFunction.PAYOFF));
-        Screenplay sp = new Screenplay("t", "l", "电影",
+        Screenplay sp = new Screenplay(null, "t", "l", "电影",
                 List.of(new Character("沈砚", List.of(), "剑客")), List.of(scene));
 
         ValidationReport report = validator.validate(sp);
@@ -115,7 +115,7 @@ class SceneValidatorTest {
                 new Heading(IntExt.INT, "客栈", "夜晚"),
                 "概要", List.of("油灯昏黄。"), List.of(), "",
                 new SourceRef(1, "原文"), null);
-        Screenplay sp = new Screenplay("t", "l", "电影", List.of(), List.of(scene));
+        Screenplay sp = new Screenplay(null, "t", "l", "电影", List.of(), List.of(scene));
 
         ValidationReport report = validator.validate(sp);
 
@@ -127,7 +127,7 @@ class SceneValidatorTest {
                 new Heading(IntExt.INT, "听雨楼客栈大堂", "夜晚"),
                 "概要",
                 List.of("油灯昏黄"),
-                List.of(new DialogueLine(speaker, "(淡淡)", "请便。")),
+                List.of(new DialogueLine(speaker, "(淡淡)", "请便。", null)),
                 "",
                 new SourceRef(1, "暮色四合，沈砚独坐角落。"),
                 new SceneCraft("观察来客", "戒备与试探", "允许同座，关系破冰", SceneFunction.REVEAL_CHARACTER));

@@ -1,3 +1,6 @@
+meta:
+  source_chapters: 3
+  scene_count: 11
 title: 孤鹰岭信物
 logline: 女侠苏窈携密信寻沈砚，共赴孤鹰岭揭穿铁面人真身与背叛真相。
 style: 电影
@@ -17,7 +20,7 @@ characters:
 scenes:
 - id: S1
   heading:
-    int_ext: INT
+    int_ext: 内
     location: 听雨楼客栈大堂
     time_of_day: 黄昏
   summary: 苏窈冒雨入客栈，向沈砚借座；两人初遇。
@@ -45,7 +48,7 @@ scenes:
     function: SETUP
 - id: S2
   heading:
-    int_ext: INT
+    int_ext: 内
     location: 听雨楼客栈大堂
     time_of_day: 黄昏
   summary: 苏窈自报姓名与来意；沈砚反应细微但警觉。
@@ -73,7 +76,7 @@ scenes:
     function: REVEAL_CHARACTER
 - id: S3
   heading:
-    int_ext: INT
+    int_ext: 内
     location: 听雨楼客栈大堂
     time_of_day: 黄昏
   summary: 苏窈出示关键信件，点明‘黑风寨’；沈砚以动作回应，情绪破冰。
@@ -101,7 +104,7 @@ scenes:
     function: ESCALATE_CONFLICT
 - id: S4
   heading:
-    int_ext: INT
+    int_ext: 内
     location: 听雨楼客栈沈砚客房
     time_of_day: 午夜
   summary: 沈砚被异响惊醒，循声追出。
@@ -122,7 +125,7 @@ scenes:
     function: ADVANCE_PLOT
 - id: S5
   heading:
-    int_ext: EXT
+    int_ext: 外
     location: 听雨楼客栈后巷
     time_of_day: 午夜
   summary: 沈砚追至后巷，截住翻墙黑影。
@@ -146,7 +149,7 @@ scenes:
     function: REVEAL_CHARACTER
 - id: S6
   heading:
-    int_ext: EXT
+    int_ext: 外
     location: 临川镇东窄巷
     time_of_day: 午夜
   summary: 追至死巷，铁面人转身对峙，亮出身份与信物。
@@ -170,7 +173,7 @@ scenes:
     function: ESCALATE_CONFLICT
 - id: S7
   heading:
-    int_ext: EXT
+    int_ext: 外
     location: 临川镇东死巷
     time_of_day: 午夜
   summary: 铁面人突袭脱身，遗落青铜令牌。
@@ -200,7 +203,7 @@ scenes:
     function: PAYOFF
 - id: S8
   heading:
-    int_ext: EXT
+    int_ext: 外
     location: 孤鹰岭山道
     time_of_day: 黎明
   summary: 沈砚与苏窈攀爬孤鹰岭，奔赴哨塔。
@@ -220,7 +223,7 @@ scenes:
     function: SETUP
 - id: S9
   heading:
-    int_ext: EXT
+    int_ext: 外
     location: 孤鹰岭山顶哨塔空地
     time_of_day: 黎明
   summary: 三人于哨塔前对峙，苏窈失语，沈砚戒备，铁面人静候。
@@ -244,7 +247,7 @@ scenes:
     function: ESCALATE_CONFLICT
 - id: S10
   heading:
-    int_ext: EXT
+    int_ext: 外
     location: 孤鹰岭山顶哨塔空地
     time_of_day: 黎明
   summary: 铁面人摘下面具，揭晓真实身份；苏窈情感决堤，沈砚维持警戒。
@@ -271,7 +274,7 @@ scenes:
     function: REVEAL_CHARACTER
 - id: S11
   heading:
-    int_ext: EXT
+    int_ext: 外
     location: 孤鹰岭山顶哨塔空地
     time_of_day: 黎明
   summary: 晨光破云，三人身影交织；苏窈从崩溃转向质问，沈砚剑势未松。

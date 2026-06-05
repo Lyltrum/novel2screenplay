@@ -328,6 +328,7 @@ function renderScreenplay(yamlText){
     ${sp.logline?`<div class="logline">${esc(sp.logline)}</div>`:""}
     <div class="badges">
       <span class="badge">${esc(sp.style||"电影")}</span>
+      ${sp.meta&&sp.meta.source_chapters?`<span class="badge">改编自 ${sp.meta.source_chapters} 章</span>`:""}
       <span class="badge">${sp.scenes.length} 场</span>
       ${warnBadge}
     </div>
@@ -359,7 +360,7 @@ function renderScene(s){
   const h = s.heading||{};
   const no = (s.id||"").replace(/^[Ss]/,"") || "";
   // 场标：场次  内/外  地点  日/夜（中文，左对齐）
-  const head = `${IE[h.int_ext]||"内"}　${esc(h.location||"")}${h.time_of_day?"　"+esc(h.time_of_day):""}`;
+  const head = `${IE[h.int_ext]||h.int_ext||"内"}　${esc(h.location||"")}${h.time_of_day?"　"+esc(h.time_of_day):""}`;
   let html = `<div class="scene">
     <div class="cn-slug"><span class="no">${esc(no)}</span><span class="hd">${head}</span></div>`;
   if(s.summary) html += `<div class="cn-summary">${esc(s.summary)}</div>`;
@@ -367,8 +368,9 @@ function renderScene(s){
   for(const a of (s.action||[])) html += `<div class="cn-action"><span class="tri">△</span>${esc(a)}</div>`;
   // 对白：角色名：（提示）台词，左对齐悬挂缩进
   for(const d of (s.dialogue||[])){
+    const ty = d.type?`<span class="pa">（${esc(d.type)}）</span>`:"";
     const pa = d.parenthetical?`<span class="pa">（${esc(d.parenthetical)}）</span>`:"";
-    html += `<div class="cn-dlg"><span class="nm">${esc(d.character)}</span>：${pa}${esc(d.line)}</div>`;
+    html += `<div class="cn-dlg"><span class="nm">${esc(d.character)}</span>${ty}：${pa}${esc(d.line)}</div>`;
   }
   if(s.transition) html += `<div class="cn-trans">${esc(s.transition)} →</div>`;
 

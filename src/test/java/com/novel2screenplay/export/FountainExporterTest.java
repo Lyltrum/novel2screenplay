@@ -26,11 +26,13 @@ class FountainExporterTest {
                 new Heading(IntExt.INT, "听雨楼客栈大堂", "黄昏"),
                 "概要",
                 List.of("油灯昏黄，沈砚独坐角落。"),
-                List.of(new DialogueLine("沈砚", "淡淡", "请便。")),
+                List.of(new DialogueLine("沈砚", "淡淡", "请便。", null),
+                        new DialogueLine("旁白", "", "雨夜的客栈，是故事的起点。",
+                                com.novel2screenplay.model.DialogueType.NARRATION)),
                 "切至",
                 new SourceRef(1, "暮色四合，沈砚独坐角落。"),
                 new SceneCraft("观察来客", "戒备与试探", "允许同座，关系破冰", SceneFunction.REVEAL_CHARACTER));
-        Screenplay sp = new Screenplay("铁面青衫", "剑客追查旧案。", "电影",
+        Screenplay sp = new Screenplay(null, "铁面青衫", "剑客追查旧案。", "电影",
                 List.of(new Character("沈砚", List.of("沈三郎"), "剑客")),
                 List.of(scene));
 
@@ -52,6 +54,8 @@ class FountainExporterTest {
         // 编剧笔记也随 Fountain 保留
         assertThat(fountain).contains("[[编剧笔记");
         assertThat(fountain).contains("REVEAL_CHARACTER");
+        // 旁白对白映射为 Fountain 角色扩展 (V.O.)
+        assertThat(fountain).contains("@旁白 (V.O.)");
     }
 
     @Test
@@ -59,9 +63,9 @@ class FountainExporterTest {
         Scene scene = new Scene("S1",
                 new Heading(IntExt.EXT, "后巷", "午夜"),
                 "概要", List.of("黑影翻墙。"),
-                List.of(new DialogueLine("沈砚", "", "")),
+                List.of(new DialogueLine("沈砚", "", "", null)),
                 "", new SourceRef(2, "原文"), null);
-        Screenplay sp = new Screenplay("t", "l", "电影", List.of(), List.of(scene));
+        Screenplay sp = new Screenplay(null, "t", "l", "电影", List.of(), List.of(scene));
 
         String fountain = exporter.toFountain(sp);
 

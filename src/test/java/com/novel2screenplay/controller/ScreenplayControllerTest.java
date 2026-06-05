@@ -8,6 +8,7 @@ import com.novel2screenplay.model.Scene;
 import com.novel2screenplay.model.SceneCraft;
 import com.novel2screenplay.model.SceneFunction;
 import com.novel2screenplay.model.Screenplay;
+import com.novel2screenplay.model.ScreenplayMeta;
 import com.novel2screenplay.model.SourceRef;
 import com.novel2screenplay.model.Character;
 import com.novel2screenplay.model.DialogueLine;
@@ -83,7 +84,7 @@ class ScreenplayControllerTest {
                 new Heading(IntExt.EXT, "后巷", "午夜"),
                 "精修后的概要",
                 List.of("黑影翻墙，沈砚疾追。"),
-                List.of(new DialogueLine("沈砚", "(低喝)", "站住！")),
+                List.of(new DialogueLine("沈砚", "(低喝)", "站住！", null)),
                 "", new SourceRef(2, "原文片段"),
                 new SceneCraft("拦下黑影", "对方夺路而逃", "沈砚追入窄巷，对峙在即", SceneFunction.ESCALATE_CONFLICT));
         when(refinementService.refine(any(), eq(List.of(shen)), eq("让动作更紧张")))
@@ -110,7 +111,7 @@ class ScreenplayControllerTest {
                 new Heading(IntExt.INT, "客栈", "黄昏"),
                 "概要", List.of("油灯昏黄。"), List.of(), "",
                 new SourceRef(1, "原文片段"), null);
-        Screenplay sp = new Screenplay("自动剧名", "梗概", "电影", List.of(), List.of(scene));
+        Screenplay sp = new Screenplay(new ScreenplayMeta(3, 1), "自动剧名", "梗概", "电影", List.of(), List.of(scene));
         ValidationReport report = new ValidationReport(
                 List.of(new ValidationIssue("S1", "x", "残留问题")));
         return new ConversionResult(sp, report);
