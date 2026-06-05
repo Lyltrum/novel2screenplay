@@ -1,0 +1,63 @@
+package com.novel2screenplay.prompt;
+
+import com.novel2screenplay.model.Chapter;
+import com.novel2screenplay.model.Character;
+import com.novel2screenplay.model.StoryBible;
+
+/**
+ * 只负责：集中存放并拼装 prompt 文本（逻辑与 prompt 分离）。
+ * 所有调用模型的提示词都在此一处维护，便于迭代调质量。
+ * 注意：输出格式指令（JSON Schema）由 Spring AI 的 BeanOutputConverter 自动追加，此处只写语义要求。
+ */
+public final class Prompts {
+
+    private Prompts() {
+    }
+
+    private static final String SCENE_EXTRACTION = """
+            你是专业影视编剧，负责把小说章节改编成结构化剧本场景。
+
+            【改编原则】
+            1. 场景切分：按"地点或时间发生切换"切分场景——地点变化或时间跳转，即为一个新场景；一章通常切出多个场景。
+            2. 适度改编：把小说的叙述与心理描写，转写为可拍摄的画面动作(action)；删除无法影像化的冗长内心独白；为每个场景补全合理的场景标题(内外景 INT/EXT、地点、时间)。
+            3. 对白：从原文人物对话中提取台词，保留说话人；可加简短括号提示(如"(冷笑)")表达语气；不要凭空捏造大段原文没有的台词。
+            4. 人名一致：严格使用下方"人物登记表"中的主名；登记表为空时，以本章首次出现的姓名为准，同一人物前后称呼保持一致。
+            5. 来源可追溯：每个场景必须在 source.excerpt 摘录触发该场景的原文片段(10~30字，直接抄录原文)；source.chapter 与场景 id 留空，由程序统一填充。
+
+            【改编风格】%s
+
+            【人物登记表】（用于人名归一）
+            %s
+
+            【本章正文】（第 %d 章：%s）
+            %s
+            """;
+
+    /** 拼装单章的场景抽取 prompt。 */
+    public static String sceneExtraction(Chapter chapter, StoryBible bible, String style) {
+        return SCENE_EXTRACTION.formatted(
+                style,
+                renderBible(bible),
+                chapter.index(),
+                chapter.title(),
+                chapter.text());
+    }
+
+    private static String renderBible(StoryBible bible) {
+        if (bible == null || bible.characters() == null || bible.characters().isEmpty()) {
+            return "（暂无，以本章为准）";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Character c : bible.characters()) {
+            sb.append("- ").append(c.name());
+            if (c.aliases() != null && !c.aliases().isEmpty()) {
+                sb.append("（别名：").append(String.join("、", c.aliases())).append("）");
+            }
+            if (c.description() != null && !c.description().isBlank()) {
+                sb.append("：").append(c.description());
+            }
+            sb.append('\n');
+        }
+        return sb.toString().strip();
+    }
+}
