@@ -1,5 +1,5 @@
-title: 铁面青衫
-logline: 剑客沈砚追查黑风寨线索，与寻兄少女苏窈同行，终在哨塔直面戴铁面的亲兄。
+title: 铁面晨曦
+logline: 沈砚追查旧案时邂逅寻兄的苏窈，雨夜对决铁面人，终在孤鹰岭黎明直面真相与故人。
 style: 电影
 characters:
 - name: 沈砚
@@ -13,18 +13,18 @@ characters:
   aliases:
   - 黑风寨的人
   - 苏窈的兄长
-  description: 身覆半张铁面具、怀揣青铜令牌的神秘黑影，与沈砚在巷中交手后遁走。
+  description: 身着黑衣、覆半张铁面具的神秘男子，怀揣青铜令牌，与沈砚交手后遁走。
 scenes:
 - id: S1
   heading:
     int_ext: INT
     location: 听雨楼客栈大堂
-    time_of_day: 暮色四合
-  summary: 沈砚独自坐在角落，青衫湿透，腰佩长剑，端酒未饮。
+    time_of_day: 黄昏
+  summary: 沈砚在黄昏时分独坐听雨楼客栈大堂，静默饮酒，身负旧案线索。
   action:
-  - 暮色沉沉，雨声淅沥。听雨楼客栈大堂内人声嘈杂，油灯昏黄，水汽氤氲。
-  - 沈砚独坐角落木桌旁，青衫被雨水浸透，紧贴肩背；腰间长剑斜倚桌沿，剑鞘微垂。
-  - 他端起粗瓷碗中一碗浊酒，腕悬半寸，迟迟未饮。
+  - 暮色四合，临川镇外的听雨楼客栈大堂内挤满避雨旅人。
+  - 沈砚独坐角落，青衫湿透，腰间长剑斜倚桌沿。
+  - 他端起一碗浊酒，目光低垂，迟迟未饮。
   dialogue: []
   transition: ""
   source:
@@ -34,200 +34,229 @@ scenes:
   heading:
     int_ext: INT
     location: 听雨楼客栈大堂
-    time_of_day: 暮色四合
-  summary: 苏窈持伞入座，与沈砚初遇，自报姓名并道出寻兄目的。
+    time_of_day: 黄昏
+  summary: 苏窈请求同坐，沈砚应允，两人初次照面。
   action:
-  - 青衣少女立于沈砚桌前，手中油纸伞滴着水，在地面洇开一小片深痕。
-  - 她眉眼清亮，下颌微扬，神情中透出不容退让的倔强。
+  - 一名青衣少女立于沈砚桌前，怀抱油纸伞，眉眼清亮而倔强。
+  - 沈砚抬眼，目光沉静，略带审视。
   dialogue:
   - character: 苏窈
-    parenthetical: 清亮
+    parenthetical: ""
     line: 客官，借个座可好？
   - character: 沈砚
-    parenthetical: 淡淡
+    parenthetical: (淡淡)
     line: 请便。
-  - character: 苏窈
-    parenthetical: ""
-    line: 我叫苏窈，是来寻找失踪兄长的。他说半月前来此镇后便音讯全无，最后一封信里只提到一个名字——"黑风寨"。
   transition: ""
   source:
     chapter: 1
-    excerpt: '"客官，借个座可好？"一个清亮的女声响起。沈砚抬头，见一名青衣少女立在桌前，手中抱着一把油纸伞，眉眼间带着几分倔强。"请便。"他淡淡道。少女自称苏窈，是来寻找失踪兄长的。她说兄长半月前来此镇后便音讯全无，最后一封信里只提到一个名字——"黑风寨"。'
+    excerpt: '"客官，借个座可好？"一个清亮的女声响起。沈砚抬头，见一名青衣少女立在桌前，手中抱着一把油纸伞，眉眼间带着几分倔强。'
 - id: S3
   heading:
     int_ext: INT
     location: 听雨楼客栈大堂
-    time_of_day: 暮色四合
-  summary: 沈砚听闻‘黑风寨’三字，手部微顿，窗外雷声炸响，二人静默对坐。
+    time_of_day: 黄昏
+  summary: 苏窈自述寻兄缘由，提及关键线索‘黑风寨’，沈砚神色微变。
   action:
-  - 沈砚指节微收，粗瓷碗沿被捏得更紧，酒液轻晃。
-  - 窗外一道惨白闪电劈过，瞬间照亮他沉静如水的侧脸；紧随其后，一声闷雷滚滚而至。
-  - 两人静坐，雨声、人声、雷声交织，油灯火苗剧烈摇曳。
+  - 苏窈落座，将油纸伞靠在桌边，雨水顺着伞骨滴落。
+  - 窗外雷声隐隐滚动，天色愈发阴沉。
+  - 沈砚手指微顿，碗沿轻颤，目光凝滞一瞬。
+  dialogue:
+  - character: 苏窈
+    parenthetical: ""
+    line: 少女自称苏窈，是来寻找失踪兄长的。她说兄长半月前来此镇后便音讯全无，最后一封信里只提到一个名字——"黑风寨"。
+  transition: ""
+  source:
+    chapter: 1
+    excerpt: 少女自称苏窈，是来寻找失踪兄长的。她说兄长半月前来此镇后便音讯全无，最后一封信里只提到一个名字——"黑风寨"。
+- id: S4
+  heading:
+    int_ext: INT
+    location: 听雨楼客栈大堂
+    time_of_day: 黄昏
+  summary: 沈砚确认黑风寨与己所查旧案关联，雷雨加剧氛围张力。
+  action:
+  - 沈砚缓缓放下酒碗，指尖在粗陶碗沿留下浅痕。
+  - 窗外一道惨白闪电劈开云层，雷声轰然炸响。
+  - 雨势骤急，敲打窗棂如鼓点。
   dialogue: []
   transition: ""
   source:
     chapter: 1
     excerpt: 沈砚握碗的手微微一紧。黑风寨，正是他此行要查的旧案源头。窗外雷声滚滚，两个怀着各自心事的人，就在这雨夜里结下了同行的缘分。
-- id: S4
+- id: S5
   heading:
     int_ext: INT
-    location: 客栈客房
-    time_of_day: Night
-  summary: 沈砚被急促脚步声惊醒，起身追出。
+    location: 听雨楼客栈沈砚房间
+    time_of_day: 午夜
+  summary: 沈砚被脚步声惊醒，起身追出。
   action:
-  - 子时刚过，雨声渐歇。沈砚在简陋木床上猛然睁眼，手已按上腰间剑柄。
-  - 他翻身下床，赤足落地，无声推门而出。
+  - 子时刚过，雨势稍歇。沈砚在床榻上猛然睁眼，翻身下床，抓起长剑推门而出。
+  - 他循着急促脚步声疾步穿过昏暗走廊，直奔后门。
   dialogue: []
-  transition: "CUT TO:"
+  transition: ""
   source:
     chapter: 2
     excerpt: 子时刚过，雨势稍歇。沈砚被一阵急促的脚步声惊醒，他翻身下床，循声追至客栈后巷。
-- id: S5
-  heading:
-    int_ext: EXT
-    location: 客栈后巷
-    time_of_day: Night
-  summary: 沈砚于后巷发现黑影翻墙，立即追击。
-  action:
-  - 清冷月光洒在湿漉漉的青石巷中。一道黑影翻越矮墙，衣角翻飞，怀中似有硬物轮廓。
-  - 沈砚足尖点地，腾身而起，如鹰掠影，紧追而去。
-  dialogue: []
-  transition: "CUT TO:"
-  source:
-    chapter: 2
-    excerpt: 月光下，一道黑影正翻墙而出，怀里似乎揣着什么东西。沈砚足尖一点，飞身追了上去。
 - id: S6
   heading:
     int_ext: EXT
-    location: 临川镇东窄巷
-    time_of_day: Night
-  summary: 沈砚喝止未果，追入窄巷，双方身影在湿滑巷道中疾掠。
+    location: 听雨楼客栈后巷
+    time_of_day: 午夜
+  summary: 沈砚于后巷发现黑影翻墙而出，立即追击。
   action:
-  - 沈砚低喝：'站住！'
-  - 黑影头也不回，身形一矮，钻入更幽深的窄巷。
-  - 雨水浸透的青石板路泛着微光，倒映两人疾驰交错的身影。
-  dialogue:
-  - character: 沈砚
-    parenthetical: ""
-    line: 站住！
-  transition: "CUT TO:"
+  - 月光斜照湿漉漉的青石巷，一道黑影翻越矮墙跃入巷中，怀中似有硬物轮廓。
+  - 沈砚足尖一点，飞身追出，衣袂划破微凉夜风。
+  dialogue: []
+  transition: ""
   source:
     chapter: 2
-    excerpt: |-
-      "站住！"他低喝一声。
-      黑影非但不停，反而加速钻进了镇东的窄巷。青石板路被雨水打湿，倒映着两人交错的身影。
+    excerpt: 月光下，一道黑影正翻墙而出，怀里似乎揣着什么东西。沈砚足尖一点，飞身追了上去。
 - id: S7
   heading:
     int_ext: EXT
-    location: 死巷尽头
-    time_of_day: Night
-  summary: 追至死巷，铁面人现身，自报身份并嘲讽沈砚。
+    location: 临川镇东窄巷
+    time_of_day: 午夜
+  summary: 沈砚喝止黑影，对方加速逃入窄巷，二人追逐于雨巷。
   action:
-  - 死巷尽头，高墙封路。黑影骤然停步，缓缓转身。
-  - 半张铁面具覆面，在月光下泛着冷硬青灰光泽。
-  - 沈砚收势立定，目光锐利扫向对方怀中——一枚青铜令牌一角赫然露出。
+  - 沈砚低喝：'站住！'
+  - 黑影非但不停，反而加速钻进镇东狭窄曲折的巷道。
+  - 雨水浸透青石板路，倒映出两人疾驰交错的身影。
+  dialogue:
+  - character: 沈砚
+    parenthetical: 低喝
+    line: 站住！
+  transition: ""
+  source:
+    chapter: 2
+    excerpt: '"站住！"他低喝一声。黑影非但不停，反而加速钻进了镇东的窄巷。青石板路被雨水打湿，倒映着两人交错的身影。'
+- id: S8
+  heading:
+    int_ext: EXT
+    location: 临川镇东死巷
+    time_of_day: 午夜
+  summary: 黑影在死巷停步转身，以铁面示人，点破沈砚身份。
+  action:
+  - 追至尽头死巷，黑影停步，缓缓转身。
+  - 铁面人半张铁面具泛着冷光，怀中青铜令牌一角隐约可见。
   dialogue:
   - character: 铁面人
     parenthetical: 声音沙哑
     line: 沈三郎，多管闲事可不是好习惯。
-  transition: "CUT TO:"
+  transition: ""
   source:
     chapter: 2
-    excerpt: |-
-      追至一处死巷，黑影终于停下，缓缓转过身来。
-      "沈三郎，多管闲事可不是好习惯。"那人声音沙哑，脸上覆着半张铁面具。
-- id: S8
+    excerpt: 追至一处死巷，黑影终于停下，缓缓转过身来。"沈三郎，多管闲事可不是好习惯。"那人声音沙哑，脸上覆着半张铁面具。
+- id: S9
   heading:
     int_ext: EXT
-    location: 死巷尽头
-    time_of_day: Night
-  summary: 沈砚认出令牌，质问身份；铁面人突袭后遁走，遗落青铜令牌。
+    location: 临川镇东死巷
+    time_of_day: 午夜
+  summary: 沈砚认出青铜令牌，质问对方身份；铁面人突袭，二人短兵相接。
   action:
-  - 沈砚瞳孔微缩，紧盯那枚青铜令牌。
-  - 铁面人冷笑，反手掷出三枚袖箭，寒光破空。
-  - 沈砚侧身闪避，长剑铮然出鞘，银刃劈开夜色，寒光炸裂。
-  - 两人短兵相接，剑影与拳风交织，碎石迸溅。
-  - 铁面人忽旋身蹬墙借力，翻上高墙，身影没入浓黑夜色。
-  - 地上唯余一枚青铜令牌，在月光下静静反光。
+  - 沈砚目光锐利，锁定铁面人怀中露出的青铜令牌。
+  - 他沉声质问，手已按上剑柄。
+  - 铁面人冷笑，反手掷出三枚袖箭；沈砚侧身闪过，长剑出鞘，寒光迸裂。
   dialogue:
   - character: 沈砚
     parenthetical: ""
     line: 黑风寨的人？
-  - character: 铁面人
-    parenthetical: 冷笑一声
-    line: ""
-  transition: FADE OUT.
+  transition: ""
   source:
     chapter: 2
-    excerpt: |-
-      沈砚定睛一看，那人怀中露出的，竟是苏窈兄长信中提及的一枚青铜令牌。"黑风寨的人？"
-      铁面人冷笑一声，反手掷出三枚袖箭。沈砚侧身闪过，长剑出鞘，巷中顿时寒光乍现。一番缠斗后，铁面人趁着夜色翻墙遁走，只在地上留下了那枚青铜令牌。
-- id: S9
-  heading:
-    int_ext: EXT
-    location: 孤鹰岭山道
-    time_of_day: DAWN
-  summary: 沈砚与苏窈沿陡峭山道攀行，晨雾弥漫，远处山顶隐约可见废弃哨塔轮廓。
-  action:
-  - 沈砚青衫微湿，步履沉稳，手按剑柄向上攀登。
-  - 苏窈怀抱油纸伞，呼吸微促，目光紧锁前方云雾深处。
-  - 山风拂过，雾气翻涌，石阶湿滑，苔痕斑驳。
-  dialogue: []
-  transition: CUT TO
-  source:
-    chapter: 3
-    excerpt: 天将破晓，沈砚与苏窈循着令牌上的纹路，攀上了镇外的孤鹰岭。
+    excerpt: 沈砚定睛一看，那人怀中露出的，竟是苏窈兄长信中提及的一枚青铜令牌。"黑风寨的人？"
 - id: S10
   heading:
     int_ext: EXT
-    location: 孤鹰岭山顶·废弃石砌哨塔前空地
-    time_of_day: DAWN
-  summary: 二人抵达山顶，云雾缭绕中哨塔矗立；苏窈声音发颤，沈砚沉默握剑；铁面人负手而立，静候多时。
+    location: 临川镇东死巷墙头
+    time_of_day: 午夜
+  summary: 铁面人借夜色遁走，遗落青铜令牌。
   action:
-  - 晨光刺破云层，洒在残破的石砌哨塔上。
-  - 苏窈停下脚步，指尖攥紧油纸伞柄，肩头微颤。
-  - 沈砚站定，右手缓缓收紧剑柄，目光如刃扫向空地中央。
-  - 铁面人身覆半张铁面具，黑衣肃立，青铜令牌垂于腰侧，在微光下泛冷青色。
+  - 缠斗数合，铁面人虚晃一招，纵身跃上高墙。
+  - 沈砚追至墙下，只见黑影没入夜色，唯余一枚青铜令牌静静躺在湿滑青石板上。
+  dialogue: []
+  transition: ""
+  source:
+    chapter: 2
+    excerpt: 一番缠斗后，铁面人趁着夜色翻墙遁走，只在地上留下了那枚青铜令牌。
+- id: S11
+  heading:
+    int_ext: EXT
+    location: 孤鹰岭山道
+    time_of_day: 黎明
+  summary: 沈砚与苏窈循令牌纹路夜攀孤鹰岭，黎明将至。
+  action:
+  - 天光微明，薄雾弥漫。沈砚与苏窈攀行于陡峭山道，青衫与青衣被晨风拂动。
+  - 苏窈不时低头凝视手中青铜令牌，指尖摩挲其上繁复纹路。
+  - 沈砚目光沉静，右手始终按在腰间剑柄，脚步稳健而警觉。
+  dialogue: []
+  transition: ""
+  source:
+    chapter: 3
+    excerpt: 天将破晓，沈砚与苏窈循着令牌上的纹路，攀上了镇外的孤鹰岭。
+- id: S12
+  heading:
+    int_ext: EXT
+    location: 孤鹰岭山顶哨塔前空地
+    time_of_day: 黎明
+  summary: 二人抵达山顶，苏窈难掩焦虑，沈砚沉默戒备。
+  action:
+  - 云海翻涌，初阳微露，金光刺破薄雾。一座坍塌半壁的石砌哨塔矗立山巅，苔痕斑驳。
+  - 苏窈驻足，呼吸微促，目光急切扫过空地，声音发颤。
+  - 沈砚停步于她身侧半步之后，未言，只将手缓缓覆上剑柄，指节微白。
   dialogue:
   - character: 苏窈
     parenthetical: 声音发颤
     line: 我兄长……是不是已经……
-  transition: CUT TO
+  transition: ""
   source:
     chapter: 3
-    excerpt: 山顶云雾缭绕，一座废弃的石砌哨塔矗立在晨光里。"我兄长……是不是已经……"苏窈的声音有些发颤。
-- id: S11
+    excerpt: '"我兄长……是不是已经……"苏窈的声音有些发颤。'
+- id: S13
   heading:
     int_ext: EXT
-    location: 孤鹰岭山顶·废弃石砌哨塔前空地
-    time_of_day: DAWN
-  summary: 铁面人开口说话，摘下面具，露出与苏窈相似的面容；苏窈震惊失声认出兄长。
+    location: 孤鹰岭山顶哨塔前空地
+    time_of_day: 黎明
+  summary: 铁面人现身，摘下面具，显露真容。
   action:
-  - 铁面人缓缓抬手，指尖扣住铁面具边缘。
-  - 金属轻响，面具脱落，露出一张清癯却疲惫的青年面庞，眉眼与苏窈神似。
-  - 苏窈瞳孔骤缩，油纸伞脱手微倾，伞面轻晃。
+  - 铁面人背对哨塔负手而立，黑衣融于残雾，肩线沉稳。
+  - 沈砚瞳孔微缩，手已按剑出鞘寸许；苏窈下意识攥紧油纸伞。
+  - 铁面人缓缓转身，抬手摘下面具——露出一张轮廓清峻、眉目与苏窈神似却更冷硬的面容。
   dialogue:
   - character: 铁面人
-    parenthetical: 语调低沉平静
+    parenthetical: 缓缓摘下面具
     line: 你们来得比我想的要快。
+  transition: ""
+  source:
+    chapter: 3
+    excerpt: 塔下的空地上，那个铁面人正负手而立，仿佛早已等候多时。"你们来得比我想的要快。"铁面人缓缓摘下面具，露出一张与苏窈有几分相似的脸。
+- id: S14
+  heading:
+    int_ext: EXT
+    location: 孤鹰岭山顶哨塔前空地
+    time_of_day: 黎明
+  summary: 苏窈认出兄长，情绪决堤；沈砚确认身份，收剑默立。
+  action:
+  - 苏窈瞳孔骤震，油纸伞脱手微倾，伞沿滴落一串露水。
+  - 她踉跄半步，嘴唇翕动，眼中瞬间涌起难以置信的泪光。
+  - 沈砚垂眸收剑，剑尖轻点地面，神色由凌厉转为凝重释然。
+  dialogue:
   - character: 苏窈
     parenthetical: 失声惊呼
     line: 哥哥！
-  transition: FADE IN
+  transition: ""
   source:
     chapter: 3
-    excerpt: '"你们来得比我想的要快。"铁面人缓缓摘下面具，露出一张与苏窈有几分相似的脸。"哥哥！"苏窈失声惊呼。'
-- id: S12
+    excerpt: '"哥哥！"苏窈失声惊呼。'
+- id: S15
   heading:
     int_ext: EXT
-    location: 孤鹰岭山顶·废弃石砌哨塔前空地
-    time_of_day: SUNRISE
-  summary: 三人静立对峙，晨曦渐染云海，真相即将揭开。
+    location: 孤鹰岭山顶哨塔前空地
+    time_of_day: 黎明
+  summary: 三人静立晨曦中，旧案真相即将揭开。
   action:
-  - 朝霞漫溢，金红光芒泼洒云海，翻涌如浪。
-  - 沈砚垂手松开剑柄，目光在苏窈与她兄长之间缓缓移动。
-  - 苏窈向前半步，嘴唇微动，却未出声；其兄凝视妹妹，眼中掠过痛楚与释然。
-  - 青铜令牌在晨光中静静反光。
+  - 三人呈三角而立：苏窈向前半步，指尖欲触又止；兄长静立，目光掠过妹妹，最终落在沈砚脸上；沈砚抱臂而立，晨光勾勒其侧脸轮廓。
+  - 云海渐染绯红，霞光漫过哨塔断垣，映亮青铜令牌上未干的露水。
+  - 风过林梢，远处传来一声悠长鹰唳。
   dialogue: []
   transition: ""
   source:

@@ -19,10 +19,15 @@ public final class Prompts {
 
             【改编原则】
             1. 场景切分：按"地点或时间发生切换"切分场景——地点变化或时间跳转，即为一个新场景；一章通常切出多个场景。
-            2. 适度改编：把小说的叙述与心理描写，转写为可拍摄的画面动作(action)；删除无法影像化的冗长内心独白；为每个场景补全合理的场景标题(内外景 INT/EXT、地点、时间)。
-            3. 对白：从原文人物对话中提取台词，保留说话人；可加简短括号提示(如"(冷笑)")表达语气；不要凭空捏造大段原文没有的台词。
-            4. 人名一致：严格使用下方"人物登记表"中的主名；登记表为空时，以本章首次出现的姓名为准，同一人物前后称呼保持一致。
-            5. 来源可追溯：每个场景必须在 source.excerpt 摘录触发该场景的原文片段(10~30字，直接抄录原文)；source.chapter 与场景 id 留空，由程序统一填充。
+            2. 适度改编：把小说的叙述与心理描写，转写为可拍摄的画面动作(action)；删除无法影像化的冗长内心独白；为每个场景补全合理的场景标题(内外景、地点、时间)。
+            3. 场景标题取值规范（务必遵守）：
+               - int_ext 只能取 INT(室内) 或 EXT(室外) 或 INT_EXT(内外景兼有)。
+               - location 用中文具体地点（如"听雨楼客栈大堂"）。
+               - time_of_day 一律用中文，从这些里选最贴切的：清晨 / 白天 / 黄昏 / 夜晚 / 午夜 / 黎明；严禁使用英文（如 Night、DAWN）。
+            4. 对白：从原文人物对话中提取台词，保留说话人；可加简短括号提示(如"(冷笑)")表达语气；不要凭空捏造大段原文没有的台词；不要产生 line 为空的对白。
+            5. 人名一致：严格使用下方"人物登记表"中的主名；登记表为空时，以本章首次出现的姓名为准，同一人物前后称呼保持一致。
+            6. 转场 transition：仅在确有必要时填写，用中文且取值固定为"切至"或"淡出"或"闪回"；无特殊转场则留空字符串。
+            7. 来源可追溯：每个场景必须在 source.excerpt 摘录触发该场景的原文片段(10~30字，直接抄录原文)；source.chapter 与场景 id 留空，由程序统一填充。
 
             【改编风格】%s
 
@@ -70,6 +75,29 @@ public final class Prompts {
     /** 拼装剧名/梗概生成 prompt（基于各场景概要，控制 token）。 */
     public static String titleLogline(String synopsis, String style) {
         return TITLE_LOGLINE.formatted(style, synopsis);
+    }
+
+    private static final String REPAIR = """
+            下面是一份自动生成的剧本(YAML)，以及它的体检问题清单。
+            请仅针对问题清单逐条修复，其余内容尽量保持不变，返回修复后的完整剧本。
+
+            【修复要求】
+            - time_of_day 必须用中文：清晨 / 白天 / 黄昏 / 夜晚 / 午夜 / 黎明。
+            - 对白的说话角色(character)必须是人物登记表中已有的主名或别名；不在表内的，改成最贴切的已登记角色。
+            - 不要出现空台词(line 为空)；空台词请删除该条对白。
+            - 每个场景必须保留 source.excerpt 原文摘录，且不要改动 source.chapter 与场景 id。
+            - 不要新增或删除场景，不要大幅改写动作与对白。
+
+            【问题清单】
+            %s
+
+            【当前剧本 YAML】
+            %s
+            """;
+
+    /** 拼装"带问题清单修复剧本"的 prompt（自检修复闭环）。 */
+    public static String repair(String issues, String currentYaml) {
+        return REPAIR.formatted(issues, currentYaml);
     }
 
     private static String renderBible(StoryBible bible) {

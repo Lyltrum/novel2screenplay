@@ -34,7 +34,8 @@ class ConversionPipelineLiveTest {
     void convertsThreeChapterNovelIntoScreenplay() throws IOException {
         String novel = readSampleNovel();
 
-        Screenplay screenplay = pipeline.convert(novel, "电影");
+        ConversionResult result = pipeline.convert(novel, "电影");
+        Screenplay screenplay = result.screenplay();
 
         // 基本完整性
         assertThat(screenplay.title()).isNotBlank();
@@ -47,6 +48,10 @@ class ConversionPipelineLiveTest {
         assertThat(screenplay.scenes())
                 .extracting(s -> s.source().chapter())
                 .contains(1, 2, 3);
+        // 自检修复闭环后，残留问题应明显收敛
+        System.out.println("修复闭环后残留问题：" + result.report().count());
+        result.report().issues().forEach(System.out::println);
+        assertThat(result.report().count()).isLessThanOrEqualTo(2);
 
         String yaml = yamlExporter.toYaml(screenplay);
         writeSampleOutput(yaml);

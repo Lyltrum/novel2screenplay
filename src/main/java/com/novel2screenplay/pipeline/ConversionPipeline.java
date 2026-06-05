@@ -10,6 +10,9 @@ import com.novel2screenplay.model.Screenplay;
 import com.novel2screenplay.model.StoryBible;
 import com.novel2screenplay.model.extraction.TitleLogline;
 import com.novel2screenplay.split.ChapterSplitter;
+import com.novel2screenplay.validate.RepairService;
+import com.novel2screenplay.validate.SceneValidator;
+import com.novel2screenplay.validate.ValidationReport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -29,26 +32,34 @@ public class ConversionPipeline {
 
     private static final Logger log = LoggerFactory.getLogger(ConversionPipeline.class);
     private static final String DEFAULT_STYLE = "电影";
+    /** 自检修复闭环的最大轮数，避免无界循环与 token 浪费。 */
+    private static final int MAX_REPAIR_ROUNDS = 2;
 
     private final ChapterSplitter chapterSplitter;
     private final StoryBibleService storyBibleService;
     private final SceneExtractionService sceneExtractionService;
     private final TitleLoglineService titleLoglineService;
     private final ScreenplayAssembler screenplayAssembler;
+    private final SceneValidator sceneValidator;
+    private final RepairService repairService;
 
     public ConversionPipeline(ChapterSplitter chapterSplitter,
                               StoryBibleService storyBibleService,
                               SceneExtractionService sceneExtractionService,
                               TitleLoglineService titleLoglineService,
-                              ScreenplayAssembler screenplayAssembler) {
+                              ScreenplayAssembler screenplayAssembler,
+                              SceneValidator sceneValidator,
+                              RepairService repairService) {
         this.chapterSplitter = chapterSplitter;
         this.storyBibleService = storyBibleService;
         this.sceneExtractionService = sceneExtractionService;
         this.titleLoglineService = titleLoglineService;
         this.screenplayAssembler = screenplayAssembler;
+        this.sceneValidator = sceneValidator;
+        this.repairService = repairService;
     }
 
-    public Screenplay convert(String novelText, String style) {
+    public ConversionResult convert(String novelText, String style) {
         String effectiveStyle = (style == null || style.isBlank()) ? DEFAULT_STYLE : style.strip();
 
         List<Chapter> chapters = chapterSplitter.split(novelText);
@@ -70,11 +81,28 @@ public class ConversionPipeline {
 
         TitleLogline titleLogline = titleLoglineService.generate(scenes, effectiveStyle);
 
-        return screenplayAssembler.assemble(
+        Screenplay screenplay = screenplayAssembler.assemble(
                 titleLogline.title(),
                 titleLogline.logline(),
                 effectiveStyle,
                 bible.characters(),
                 scenes);
+
+        return selfHealing(screenplay);
+    }
+
+    /** 自检 + 自动修复闭环（亮点 P1）：体检 → 有问题则带清单让模型修 → 复检，最多 {@value MAX_REPAIR_ROUNDS} 轮。 */
+    private ConversionResult selfHealing(Screenplay screenplay) {
+        ValidationReport report = sceneValidator.validate(screenplay);
+        log.info("首次体检：发现 {} 处问题", report.count());
+
+        int round = 0;
+        while (!report.isClean() && round < MAX_REPAIR_ROUNDS) {
+            round++;
+            screenplay = repairService.repair(screenplay, report);
+            report = sceneValidator.validate(screenplay);
+            log.info("第 {} 轮修复后：残留 {} 处问题", round, report.count());
+        }
+        return new ConversionResult(screenplay, report);
     }
 }
