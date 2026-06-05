@@ -1,9 +1,14 @@
 spring:
   application:
     name: novel2screenplay
+  profiles:
+    # 默认启用 local 档：自动加载被 .gitignore 忽略的 application-local.yml（存放本地密钥）。
+    # 部署或他人运行时，改用环境变量 AI_DASHSCOPE_API_KEY 即可，不依赖该文件。
+    active: ${SPRING_PROFILES_ACTIVE:local}
   ai:
     dashscope:
-      # API key 走环境变量，绝不入库；未配置时留空，应用仍可启动，仅在真正调用模型时报错
+      # ⚠ 切勿把密钥写进本文件！本文件会入库。
+      # 密钥放 application-local.yml（已 gitignore）或环境变量 AI_DASHSCOPE_API_KEY。
       api-key: ${AI_DASHSCOPE_API_KEY:}
       chat:
         options:
