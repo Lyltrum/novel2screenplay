@@ -30,6 +30,7 @@ public final class Prompts {
             7. 来源可追溯：每个场景必须在 source.excerpt 摘录触发该场景的原文片段(10~30字，直接抄录原文)；source.chapter 与场景 id 留空，由程序统一填充。
 
             【改编风格】%s
+            %s
 
             【人物登记表】（用于人名归一）
             %s
@@ -38,10 +39,12 @@ public final class Prompts {
             %s
             """;
 
-    /** 拼装单章的场景抽取 prompt。 */
-    public static String sceneExtraction(Chapter chapter, StoryBible bible, String style) {
+    /** 拼装单章的场景抽取 prompt。styleGuidance 为风格化改编指引（可空）。 */
+    public static String sceneExtraction(Chapter chapter, StoryBible bible,
+                                         String style, String styleGuidance) {
         return SCENE_EXTRACTION.formatted(
                 style,
+                styleGuidance == null ? "" : styleGuidance,
                 renderBible(bible),
                 chapter.index(),
                 chapter.title(),
