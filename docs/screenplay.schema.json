@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://novel2screenplay/schema/screenplay.schema.json",
+  "title": "Screenplay",
+  "description": "AI 小说转剧本工具输出的结构化剧本 YAML 的形式化 Schema（Draft 2020-12）。YAML 的数据模型与 JSON 一致，可用本 Schema 直接校验输出 YAML。字段名为蛇形（SNAKE_CASE），与 YAML 输出一致；可空字段在输出中为 null 时会被省略（NON_NULL），故未列入 required。单一事实源为 src/main/java/com/novel2screenplay/model/ 下的 Java record，本 Schema 照其编写。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "title", "logline", "style", "characters", "scenes"],
+  "properties": {
+    "meta": {
+      "description": "溯源信息，由程序计算填充（非模型生成）。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_chapters", "scene_count"],
+      "properties": {
+        "source_chapters": {
+          "description": "本剧本改编自原文的章节数。",
+          "type": "integer",
+          "minimum": 0
+        },
+        "scene_count": {
+          "description": "本剧本的场景总数。",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "title": {
+      "description": "剧名。",
+      "type": "string"
+    },
+    "logline": {
+      "description": "一句话故事梗概（点明主角/目标/核心冲突）。",
+      "type": "string"
+    },
+    "style": {
+      "description": "改编形态。剧集为默认主流形态（叠加分集层）；电影/话剧/短剧/分镜为单本形态。",
+      "type": "string",
+      "enum": ["剧集", "电影", "话剧", "短剧", "分镜"]
+    },
+    "characters": {
+      "description": "全局人物登记表（去重、跨场景/跨章一致）。",
+      "type": "array",
+      "items": { "$ref": "#/$defs/character" }
+    },
+    "episodes": {
+      "description": "分集编排层。仅剧集形态填充，单本形态省略；只通过 scene_ids 引用 scenes，不持有场景内容。",
+      "type": "array",
+      "items": { "$ref": "#/$defs/episode" }
+    },
+    "scenes": {
+      "description": "场景列表（剧本主体），全局扁平、统一编号。",
+      "type": "array",
+      "items": { "$ref": "#/$defs/scene" }
+    }
+  },
+  "$defs": {
+    "character": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "description": "主名（规范称呼）；对白的 character 字段引用此主名。",
+          "type": "string"
+        },
+        "aliases": {
+          "description": "别名/称呼列表（绰号、尊称、自称），跨章人名归一的依据。",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "description": {
+          "description": "一句话人物设定。",
+          "type": "string"
+        }
+      }
+    },
+    "episode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "title", "synopsis", "hook", "scene_ids"],
+      "properties": {
+        "number": {
+          "description": "集号，从 1 递增。",
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "description": "集名。",
+          "type": "string"
+        },
+        "synopsis": {
+          "description": "本集一句话梗概。",
+          "type": "string"
+        },
+        "hook": {
+          "description": "集尾钩子：本集结尾的悬念/转折/危机，驱动追看下一集。",
+          "type": "string"
+        },
+        "scene_ids": {
+          "description": "本集包含的场景 id（引用 scenes 中的 id，按播出顺序）。",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "heading", "source", "craft"],
+      "properties": {
+        "id": {
+          "description": "全局唯一场景号（S1、S2…），由程序统一编号，可编辑/重排/引用。",
+          "type": "string",
+          "pattern": "^S[0-9]+$"
+        },
+        "heading": { "$ref": "#/$defs/heading" },
+        "summary": {
+          "description": "本场一句话概要，便于浏览与大纲视图。",
+          "type": "string"
+        },
+        "action": {
+          "description": "可拍摄的动作/场景描述段落（只写镜头看得见、麦克风听得见的内容）。",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "dialogue": {
+          "description": "对白列表。",
+          "type": "array",
+          "items": { "$ref": "#/$defs/dialogue_line" }
+        },
+        "transition": {
+          "description": "转场，取值 切至/淡出/闪回，可为空字符串。",
+          "type": "string"
+        },
+        "source": { "$ref": "#/$defs/source_ref" },
+        "craft": { "$ref": "#/$defs/scene_craft" }
+      }
+    },
+    "heading": {
+      "description": "场景标题（slugline）：内外景 + 地点 + 时间。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["int_ext", "location", "time_of_day"],
+      "properties": {
+        "int_ext": {
+          "description": "内外景标记（受控枚举，YAML 中以中文呈现）。",
+          "type": "string",
+          "enum": ["内", "外", "内外"]
+        },
+        "location": {
+          "description": "中文具体地点；场景切分依据之一（地点变化即换场）。",
+          "type": "string"
+        },
+        "time_of_day": {
+          "description": "时间，建议取 清晨/白天/黄昏/夜晚/午夜/黎明；约定用中文。",
+          "type": "string"
+        }
+      }
+    },
+    "dialogue_line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["character", "line"],
+      "properties": {
+        "character": {
+          "description": "说话角色：须为 characters 登记表中的主名/别名，或路人甲/群众/士兵等无名群演泛称。",
+          "type": "string"
+        },
+        "parenthetical": {
+          "description": "括号提示（语气/小动作），如 冷笑、压低声音；可为空。",
+          "type": "string"
+        },
+        "line": {
+          "description": "台词正文。",
+          "type": "string"
+        },
+        "type": {
+          "description": "对白类型：普通对白省略本字段；旁白/画外/内心时标注（YAML 中以中文呈现）。",
+          "type": "string",
+          "enum": ["普通", "旁白", "画外", "内心"]
+        }
+      }
+    },
+    "source_ref": {
+      "description": "来源出处（可追溯设计）：让每个场景可回溯原文，把自动生成变成可验证的辅助初稿。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chapter", "excerpt"],
+      "properties": {
+        "chapter": {
+          "description": "该场景改编自原文的第几章（程序回填）。",
+          "type": "integer",
+          "minimum": 1
+        },
+        "excerpt": {
+          "description": "触发该场景的原文片段摘录。",
+          "type": "string"
+        }
+      }
+    },
+    "scene_craft": {
+      "description": "编剧笔记（戏剧注释层，与可拍摄正文分离）。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objective", "conflict", "turn", "function"],
+      "properties": {
+        "objective": {
+          "description": "本场主驱动角色想要什么（戏剧目标）。",
+          "type": "string"
+        },
+        "conflict": {
+          "description": "阻碍该目标的对抗力量。",
+          "type": "string"
+        },
+        "turn": {
+          "description": "本场结束时发生的变化（情势/关系/情绪/信息的翻转），不能是无变化。",
+          "type": "string"
+        },
+        "function": {
+          "description": "主要戏剧职能（受控枚举，YAML 中为常量名）。",
+          "type": "string",
+          "enum": ["ADVANCE_PLOT", "REVEAL_CHARACTER", "ESCALATE_CONFLICT", "SETUP", "PAYOFF"]
+        }
+      }
+    }
+  }
+}
