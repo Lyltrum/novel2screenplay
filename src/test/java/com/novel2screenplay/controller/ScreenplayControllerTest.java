@@ -42,9 +42,9 @@ class ScreenplayControllerTest {
 
     @Test
     void returnsYamlByDefaultWithWarningHeader() {
-        when(pipeline.convert("小说正文", "电影")).thenReturn(sampleResult());
+        when(pipeline.convert("小说正文", "电影", null)).thenReturn(sampleResult());
 
-        ResponseEntity<String> resp = controller.convert("小说正文", null, "电影", "yaml");
+        ResponseEntity<String> resp = controller.convert("小说正文", null, "电影", "yaml", null);
 
         assertThat(resp.getStatusCode().value()).isEqualTo(200);
         assertThat(resp.getBody()).contains("int_ext:");
@@ -54,9 +54,9 @@ class ScreenplayControllerTest {
 
     @Test
     void returnsFountainWhenRequested() {
-        when(pipeline.convert("小说正文", "电影")).thenReturn(sampleResult());
+        when(pipeline.convert("小说正文", "电影", null)).thenReturn(sampleResult());
 
-        ResponseEntity<String> resp = controller.convert("小说正文", null, "电影", "fountain");
+        ResponseEntity<String> resp = controller.convert("小说正文", null, "电影", "fountain", null);
 
         assertThat(resp.getBody()).contains("INT. 客栈 - 黄昏");
         assertThat(resp.getHeaders().getContentType().toString()).contains("text/plain");
@@ -64,16 +64,16 @@ class ScreenplayControllerTest {
 
     @Test
     void overridesTitleWhenProvided() {
-        when(pipeline.convert("小说正文", "电影")).thenReturn(sampleResult());
+        when(pipeline.convert("小说正文", "电影", null)).thenReturn(sampleResult());
 
-        ResponseEntity<String> resp = controller.convert("小说正文", "我的剧名", "电影", "yaml");
+        ResponseEntity<String> resp = controller.convert("小说正文", "我的剧名", "电影", "yaml", null);
 
         assertThat(resp.getBody()).contains("title: 我的剧名");
     }
 
     @Test
     void rejectsBlankInput() {
-        assertThatThrownBy(() -> controller.convert("   ", null, "电影", "yaml"))
+        assertThatThrownBy(() -> controller.convert("   ", null, "电影", "yaml", null))
                 .isInstanceOf(ResponseStatusException.class);
     }
 
@@ -111,7 +111,7 @@ class ScreenplayControllerTest {
                 new Heading(IntExt.INT, "客栈", "黄昏"),
                 "概要", List.of("油灯昏黄。"), List.of(), "",
                 new SourceRef(1, "原文片段"), null);
-        Screenplay sp = new Screenplay(new ScreenplayMeta(3, 1), "自动剧名", "梗概", "电影", List.of(), List.of(scene));
+        Screenplay sp = new Screenplay(new ScreenplayMeta(3, 1), "自动剧名", "梗概", "电影", List.of(), null, List.of(scene));
         ValidationReport report = new ValidationReport(
                 List.of(new ValidationIssue("S1", "x", "残留问题")));
         return new ConversionResult(sp, report);

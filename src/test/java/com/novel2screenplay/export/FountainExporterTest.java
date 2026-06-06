@@ -34,6 +34,7 @@ class FountainExporterTest {
                 new SceneCraft("观察来客", "戒备与试探", "允许同座，关系破冰", SceneFunction.REVEAL_CHARACTER));
         Screenplay sp = new Screenplay(null, "铁面青衫", "剑客追查旧案。", "电影",
                 List.of(new Character("沈砚", List.of("沈三郎"), "剑客")),
+                null,
                 List.of(scene));
 
         String fountain = exporter.toFountain(sp);
@@ -65,7 +66,7 @@ class FountainExporterTest {
                 "概要", List.of("黑影翻墙。"),
                 List.of(new DialogueLine("沈砚", "", "", null)),
                 "", new SourceRef(2, "原文"), null);
-        Screenplay sp = new Screenplay(null, "t", "l", "电影", List.of(), List.of(scene));
+        Screenplay sp = new Screenplay(null, "t", "l", "电影", List.of(), null, List.of(scene));
 
         String fountain = exporter.toFountain(sp);
 

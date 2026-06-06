@@ -76,6 +76,7 @@ class YamlExporterTest {
                 "一个诗人仗剑天涯、以酒会友的故事。",
                 "电影",
                 List.of(liBai),
+                null,
                 List.of(scene));
     }
 }

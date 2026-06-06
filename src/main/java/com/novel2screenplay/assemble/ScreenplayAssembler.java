@@ -35,6 +35,7 @@ public class ScreenplayAssembler {
                 logline,
                 style,
                 characters == null ? List.of() : characters,
+                null,
                 numbered);
     }
 

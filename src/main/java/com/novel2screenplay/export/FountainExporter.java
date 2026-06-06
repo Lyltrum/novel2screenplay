@@ -1,6 +1,7 @@
 package com.novel2screenplay.export;
 
 import com.novel2screenplay.model.DialogueLine;
+import com.novel2screenplay.model.Episode;
 import com.novel2screenplay.model.Heading;
 import com.novel2screenplay.model.IntExt;
 import com.novel2screenplay.model.Scene;
@@ -9,7 +10,9 @@ import com.novel2screenplay.model.Screenplay;
 import com.novel2screenplay.model.SourceRef;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 只负责：Screenplay → Fountain 行业标准剧本文本（亮点 P2）。
@@ -35,10 +38,48 @@ public class FountainExporter {
         }
         sb.append('\n');
 
-        for (Scene scene : screenplay.scenes()) {
-            appendScene(sb, scene);
+        List<Episode> episodes = screenplay.episodes();
+        if (episodes != null && !episodes.isEmpty()) {
+            appendByEpisode(sb, screenplay, episodes);
+        } else if (screenplay.scenes() != null) {
+            for (Scene scene : screenplay.scenes()) {
+                appendScene(sb, scene);
+            }
         }
         return sb.toString();
+    }
+
+    /** 剧集形态：按「集」分节输出（# 第N集 标题），集首附本集梗概、集尾附钩子。 */
+    private void appendByEpisode(StringBuilder sb, Screenplay screenplay, List<Episode> episodes) {
+        Map<String, Scene> byId = new HashMap<>();
+        if (screenplay.scenes() != null) {
+            for (Scene s : screenplay.scenes()) {
+                if (s.id() != null) {
+                    byId.put(s.id(), s);
+                }
+            }
+        }
+        for (Episode ep : episodes) {
+            sb.append("# 第").append(ep.number()).append("集");
+            if (notBlank(ep.title())) {
+                sb.append(' ').append(ep.title().strip());
+            }
+            sb.append("\n\n");
+            if (notBlank(ep.synopsis())) {
+                sb.append("[[本集梗概：").append(ep.synopsis().strip()).append("]]\n\n");
+            }
+            if (ep.sceneIds() != null) {
+                for (String id : ep.sceneIds()) {
+                    Scene sc = byId.get(id);
+                    if (sc != null) {
+                        appendScene(sb, sc);
+                    }
+                }
+            }
+            if (notBlank(ep.hook())) {
+                sb.append("[[集尾钩子：").append(ep.hook().strip()).append("]]\n\n");
+            }
+        }
     }
 
     private void appendScene(StringBuilder sb, Scene scene) {

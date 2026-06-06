@@ -44,7 +44,7 @@ class SceneExtractionServiceLiveTest {
         assertThat(scenes).isNotEmpty();
 
         Screenplay screenplay = new Screenplay(
-                null, "雨夜客栈（测试）", "", "电影", List.of(), scenes);
+                null, "雨夜客栈（测试）", "", "电影", List.of(), null, scenes);
         String yaml = yamlExporter.toYaml(screenplay);
         System.out.println("===== 第一章抽取的剧本 YAML =====\n" + yaml);
 

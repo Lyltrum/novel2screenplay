@@ -28,7 +28,7 @@ public class SceneRefinementService {
 
     public Scene refine(Scene scene, List<Character> characters, String instruction) {
         String sceneYaml = yamlExporter.toYaml(
-                new Screenplay(null, null, null, null, List.of(), List.of(scene)));
+                new Screenplay(null, null, null, null, List.of(), List.of(), List.of(scene)));
 
         Scene refined = chatClient.prompt()
                 .user(Prompts.refine(instruction, characters, sceneYaml))

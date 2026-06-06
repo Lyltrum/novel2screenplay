@@ -1,6 +1,11 @@
 package com.novel2screenplay.pipeline;
 
 import com.novel2screenplay.assemble.ScreenplayAssembler;
+import com.novel2screenplay.episode.EpisodePlanner;
+import com.novel2screenplay.episode.EpisodeValidator;
+import com.novel2screenplay.model.Episode;
+import com.novel2screenplay.style.StyleTemplate;
+import com.novel2screenplay.validate.ValidationIssue;
 import com.novel2screenplay.bible.StoryBibleService;
 import com.novel2screenplay.extract.SceneExtractionService;
 import com.novel2screenplay.extract.TitleLoglineService;
@@ -32,7 +37,7 @@ import java.util.List;
 public class ConversionPipeline {
 
     private static final Logger log = LoggerFactory.getLogger(ConversionPipeline.class);
-    private static final String DEFAULT_STYLE = "电影";
+    private static final String DEFAULT_STYLE = "剧集";
     /** 自检修复闭环的最大轮数，避免无界循环与 token 浪费。 */
     private static final int MAX_REPAIR_ROUNDS = 2;
     /** 滚动提要保留的最大字符数（取最近剧情，控制 token）。 */
@@ -46,6 +51,9 @@ public class ConversionPipeline {
     private final ScreenplayAssembler screenplayAssembler;
     private final SceneValidator sceneValidator;
     private final RepairService repairService;
+    private final StyleTemplate styleTemplate;
+    private final EpisodePlanner episodePlanner;
+    private final EpisodeValidator episodeValidator;
 
     public ConversionPipeline(ChapterSplitter chapterSplitter,
                               ChunkSplitter chunkSplitter,
@@ -54,7 +62,10 @@ public class ConversionPipeline {
                               TitleLoglineService titleLoglineService,
                               ScreenplayAssembler screenplayAssembler,
                               SceneValidator sceneValidator,
-                              RepairService repairService) {
+                              RepairService repairService,
+                              StyleTemplate styleTemplate,
+                              EpisodePlanner episodePlanner,
+                              EpisodeValidator episodeValidator) {
         this.chapterSplitter = chapterSplitter;
         this.chunkSplitter = chunkSplitter;
         this.storyBibleService = storyBibleService;
@@ -63,9 +74,12 @@ public class ConversionPipeline {
         this.screenplayAssembler = screenplayAssembler;
         this.sceneValidator = sceneValidator;
         this.repairService = repairService;
+        this.styleTemplate = styleTemplate;
+        this.episodePlanner = episodePlanner;
+        this.episodeValidator = episodeValidator;
     }
 
-    public ConversionResult convert(String novelText, String style) {
+    public ConversionResult convert(String novelText, String style, Integer episodes) {
         String effectiveStyle = (style == null || style.isBlank()) ? DEFAULT_STYLE : style.strip();
 
         List<Chapter> chapters = chapterSplitter.split(novelText);
@@ -106,7 +120,34 @@ public class ConversionPipeline {
                 bible.characters(),
                 scenes);
 
-        return selfHealing(screenplay);
+        ConversionResult result = selfHealing(screenplay);
+
+        // 剧集形态：在场景之上叠加"集"编排（分集大纲 + 集尾钩子）；单本形态(电影/话剧/短剧/分镜)跳过
+        if (styleTemplate.isSeries(effectiveStyle)) {
+            result = planEpisodes(result, episodes);
+        }
+        return result;
+    }
+
+    /** 分集：调 EpisodePlanner 产出集编排，校验覆盖性并把集层告警并入报告（本期不做分集修复闭环）。 */
+    private ConversionResult planEpisodes(ConversionResult result, Integer targetEpisodes) {
+        Screenplay sp = result.screenplay();
+        List<Episode> episodes = episodePlanner.plan(sp, targetEpisodes);
+        Screenplay withEps = withEpisodes(sp, episodes);
+        ValidationReport epReport = episodeValidator.validate(withEps);
+        log.info("分集完成：{} 集，集层告警 {} 处", episodes.size(), epReport.count());
+        return new ConversionResult(withEps, mergeReports(result.report(), epReport));
+    }
+
+    private Screenplay withEpisodes(Screenplay sp, List<Episode> episodes) {
+        return new Screenplay(sp.meta(), sp.title(), sp.logline(), sp.style(),
+                sp.characters(), episodes, sp.scenes());
+    }
+
+    private ValidationReport mergeReports(ValidationReport a, ValidationReport b) {
+        List<ValidationIssue> merged = new ArrayList<>(a.issues());
+        merged.addAll(b.issues());
+        return new ValidationReport(merged);
     }
 
     /** 自检 + 自动修复闭环（亮点 P1）：体检 → 有问题则带清单让模型修 → 复检，最多 {@value MAX_REPAIR_ROUNDS} 轮。 */

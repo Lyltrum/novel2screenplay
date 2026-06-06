@@ -159,6 +159,39 @@ public final class Prompts {
                 sceneYaml);
     }
 
+    private static final String EPISODE_PLANNING = """
+            你是资深电视剧编剧，负责把一部"已经分好场景"的剧本，按「集」重新编排成剧集（电视剧/网剧）的分集结构。
+            注意：集不是小说的章——集是独立的叙事单元，由你按戏剧节奏重新划分（可把若干连续场景并入一集）。
+
+            【分集原则】
+            1. 每集是一个相对完整的叙事单元，围绕一两个核心事件推进，有起承转合。
+            2. 集尾钩子(hook)：每集结尾必须制造悬念、转折或危机，驱动观众追看下一集——这是剧集的命门，不可省。
+            3. 节奏优先、不要机械等分：按剧情自然节拍切集。
+            4. 覆盖完整、不重不漏：每个场景必须且只能归入某一集；只用场景 id 引用，绝不改写场景内容。
+            %s
+
+            为每一集给出：
+            - number：集号，从 1 开始递增。
+            - title：集名（简洁、有戏剧张力）。
+            - synopsis：本集一句话梗概。
+            - hook：本集结尾的钩子（一句话，制造悬念/转折/危机）。
+            - sceneIds：本集包含的场景 id 列表，按播出顺序排列。
+
+            【场景清单】（id | 概要 | 本场转折 | 戏剧职能）
+            %s
+            """;
+
+    /**
+     * 拼装分集 prompt（剧集形态）。
+     * sceneList 为场景精简清单；targetEpisodes 为指定集数（null 或 ≤0 表示由模型按节奏自动决定）。
+     */
+    public static String episodePlanning(String sceneList, Integer targetEpisodes) {
+        String countDirective = (targetEpisodes == null || targetEpisodes <= 0)
+                ? "5. 集数：由你根据剧情节奏自行决定共分几集（通常每集涵盖若干场景，切忌每场一集）。"
+                : "5. 集数：必须恰好分为 " + targetEpisodes + " 集，把场景按节奏均衡分配到这 " + targetEpisodes + " 集。";
+        return EPISODE_PLANNING.formatted(countDirective, sceneList);
+    }
+
     private static String renderBible(StoryBible bible) {
         if (bible == null || bible.characters() == null || bible.characters().isEmpty()) {
             return "（暂无，以本章为准）";

@@ -34,7 +34,7 @@ class ConversionPipelineLiveTest {
     void convertsThreeChapterNovelIntoScreenplay() throws IOException {
         String novel = readSampleNovel();
 
-        ConversionResult result = pipeline.convert(novel, "电影");
+        ConversionResult result = pipeline.convert(novel, "电影", null);
         Screenplay screenplay = result.screenplay();
 
         // 基本完整性

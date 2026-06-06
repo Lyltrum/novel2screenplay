@@ -3,7 +3,7 @@ meta:
   scene_count: 11
 title: 孤鹰岭信物
 logline: 女侠苏窈携密信寻沈砚，共赴孤鹰岭揭穿铁面人真身与背叛真相。
-style: 电影
+style: 剧集
 characters:
 - name: 沈砚
   aliases:
@@ -17,6 +17,33 @@ characters:
   - 黑风寨的人
   - 苏窈的兄长
   description: 夜闯客栈后巷的黑影，脸上覆着半张铁面具，怀揣青铜令牌，与沈砚交手后遁走。
+episodes:
+- number: 1
+  title: 雨夜借座
+  synopsis: 苏窈冒雨入客栈寻人，与沈砚初遇，亮出"黑风寨"线索，僵持中破冰。
+  hook: 沈砚仰头饮尽那碗一直未动的浊酒——他为何对"黑风寨"三字如此在意？
+  scene_ids:
+  - S1
+  - S2
+  - S3
+- number: 2
+  title: 子夜夺令
+  synopsis: 沈砚被异响惊醒，追击翻墙黑影至死巷，铁面人突袭遁走，遗落一枚青铜令牌。
+  hook: 令牌一角蚀着"黑风"二字——那个铁面人，究竟是谁？
+  scene_ids:
+  - S4
+  - S5
+  - S6
+  - S7
+- number: 3
+  title: 孤鹰岭真相
+  synopsis: 沈砚与苏窈循令牌纹路登上孤鹰岭哨塔，铁面人摘下面具，竟是苏窈失踪的兄长。
+  hook: 兄长扮成黑风寨的人潜伏至今——他到底在查什么？沈砚的剑，为何始终没有归鞘？
+  scene_ids:
+  - S8
+  - S9
+  - S10
+  - S11
 scenes:
 - id: S1
   heading:

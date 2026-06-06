@@ -69,6 +69,13 @@
     padding:7px 12px;cursor:pointer;outline:none;transition:border-color .2s;
   }
   select:hover{border-color:var(--amber)}
+  input#episodes{
+    font-family:inherit;font-size:14px;color:var(--ivory);width:74px;
+    background:var(--stage-2);border:1px solid var(--line);border-radius:2px;
+    padding:7px 10px;outline:none;transition:border-color .2s;
+  }
+  input#episodes:hover,input#episodes:focus{border-color:var(--amber)}
+  input#episodes::placeholder{color:var(--muted)}
   .seg{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
   .seg button{
     font-family:inherit;font-size:13px;padding:7px 13px;background:transparent;
@@ -140,6 +147,17 @@
   .badge.warn{border-color:#c8884a;color:#a85f1e;background:#fbf1e3}
   .badge.ok{border-color:#7d9b6d;color:#4e7038;background:#eef4e8}
 
+  /* 集 · 剧集分集编排 */
+  .ep-head{display:flex;align-items:baseline;gap:14px;margin:36px 0 6px;padding:10px 0 8px;
+    border-top:2px solid var(--ink);border-bottom:1px solid var(--rule)}
+  .ep-head .ep-no{font-weight:900;font-size:20px;letter-spacing:2px;color:#a23b1e}
+  .ep-head .ep-title{font-weight:700;font-size:18px;letter-spacing:2px;color:var(--ink)}
+  .ep-syn{font-style:italic;color:#8a8070;font-size:14px;margin:2px 0 6px}
+  .ep-hook{margin:12px 0 6px;padding:10px 14px;background:#fbf1e3;border-left:3px solid #c8884a;
+    color:#8a4a1e;font-size:14px;line-height:1.6}
+  .ep-hook .k{font-weight:600;letter-spacing:1px;font-size:10px;text-transform:uppercase;
+    display:block;margin-bottom:3px;opacity:.7}
+
   /* 人物表 */
   .roster{margin:26px 0 10px;padding:16px 20px;background:#efe9dc;border-left:3px solid var(--amber)}
   .roster h3{font-size:12px;letter-spacing:3px;color:#8a7f6d;text-transform:uppercase;margin-bottom:10px}
@@ -202,8 +220,12 @@
     <div class="field">
       <label>风格</label>
       <select id="style">
-        <option>电影</option><option>话剧</option><option>短剧</option><option>分镜</option>
+        <option>剧集</option><option>电影</option><option>话剧</option><option>短剧</option><option>分镜</option>
       </select>
+    </div>
+    <div class="field">
+      <label>集数</label>
+      <input id="episodes" type="number" min="1" placeholder="自动" title="仅剧集形态生效，留空由模型按节奏自动决定" />
     </div>
     <div class="field">
       <label>视图</label>
@@ -294,7 +316,9 @@ async function fetchFor(v){
   go.disabled = true;
   out.innerHTML = loadingBox(style);
   try{
-    const url = `${API}?style=${encodeURIComponent(style)}&format=${format}`;
+    const eps = $("#episodes").value.trim();
+    let url = `${API}?style=${encodeURIComponent(style)}&format=${format}`;
+    if(eps) url += `&episodes=${encodeURIComponent(eps)}`;
     const res = await fetch(url, {
       method:"POST",
       headers:{"Content-Type":"text/plain; charset=utf-8"},
@@ -327,8 +351,9 @@ function renderScreenplay(yamlText){
     <h2>${esc(sp.title||"无题")}</h2>
     ${sp.logline?`<div class="logline">${esc(sp.logline)}</div>`:""}
     <div class="badges">
-      <span class="badge">${esc(sp.style||"电影")}</span>
+      <span class="badge">${esc(sp.style||"剧集")}</span>
       ${sp.meta&&sp.meta.source_chapters?`<span class="badge">改编自 ${sp.meta.source_chapters} 章</span>`:""}
+      ${Array.isArray(sp.episodes)&&sp.episodes.length?`<span class="badge">${sp.episodes.length} 集</span>`:""}
       <span class="badge">${sp.scenes.length} 场</span>
       ${warnBadge}
     </div>
@@ -343,8 +368,21 @@ function renderScreenplay(yamlText){
     html += `</div>`;
   }
 
-  for(const s of sp.scenes){
-    html += renderScene(s);
+  if(Array.isArray(sp.episodes) && sp.episodes.length){
+    const byId = {};
+    for(const s of sp.scenes) byId[s.id] = s;
+    for(const ep of sp.episodes){
+      html += `<div class="ep-head"><span class="ep-no">第 ${ep.number} 集</span><span class="ep-title">${esc(ep.title||"")}</span></div>`;
+      if(ep.synopsis) html += `<div class="ep-syn">${esc(ep.synopsis)}</div>`;
+      for(const id of (ep.scene_ids||[])){
+        if(byId[id]) html += renderScene(byId[id]);
+      }
+      if(ep.hook) html += `<div class="ep-hook"><span class="k">集尾钩子</span>${esc(ep.hook)}</div>`;
+    }
+  } else {
+    for(const s of sp.scenes){
+      html += renderScene(s);
+    }
   }
   out.innerHTML = html;
 }
@@ -397,7 +435,7 @@ function loadingBox(style){
   return `<div class="loading">
     <div class="projector"></div>
     <p>正在把小说改编成「${style}」剧本…</p>
-    <div class="sub">逐章登记人物 → 切分场景 → 自检修复，约需 1–2 分钟</div>
+    <div class="sub">逐章登记人物 → 切分场景 → 自检修复 → 分集编排，长文约需数分钟</div>
   </div>`;
 }
 function errBox(msg){ return `<div class="err">${msg}</div>`; }

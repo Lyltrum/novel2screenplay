@@ -28,8 +28,9 @@ import java.util.List;
  * POST /api/screenplay/convert
  *   - 请求体 text/plain：小说全文
  *   - ?title=  可选，覆盖自动生成的剧名
- *   - ?style=  改编风格（默认 电影）
+ *   - ?style=  改编风格（默认 剧集；其余 电影/话剧/短剧/分镜 为单本形态）
  *   - ?format= yaml | fountain（默认 yaml）
+ *   - ?episodes= 剧集分集的总集数（可选，缺省由模型按节奏自动决定；仅剧集形态生效）
  *   - 响应：剧本文本 + 响应头 X-Validation-Warnings（自检修复后残留问题数）
  */
 @RestController
@@ -60,14 +61,15 @@ public class ScreenplayController {
     public ResponseEntity<String> convert(
             @RequestBody String novelText,
             @RequestParam(required = false) String title,
-            @RequestParam(defaultValue = "电影") String style,
-            @RequestParam(defaultValue = "yaml") String format) {
+            @RequestParam(defaultValue = "剧集") String style,
+            @RequestParam(defaultValue = "yaml") String format,
+            @RequestParam(required = false) Integer episodes) {
 
         if (novelText == null || novelText.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "小说文本不能为空");
         }
 
-        ConversionResult result = pipeline.convert(novelText, style);
+        ConversionResult result = pipeline.convert(novelText, style, episodes);
         Screenplay screenplay = applyTitleOverride(result.screenplay(), title);
 
         boolean fountain = "fountain".equalsIgnoreCase(format);
@@ -112,6 +114,7 @@ public class ScreenplayController {
         if (title == null || title.isBlank()) {
             return sp;
         }
-        return new Screenplay(sp.meta(), title.strip(), sp.logline(), sp.style(), sp.characters(), sp.scenes());
+        return new Screenplay(sp.meta(), title.strip(), sp.logline(), sp.style(),
+                sp.characters(), sp.episodes(), sp.scenes());
     }
 }
