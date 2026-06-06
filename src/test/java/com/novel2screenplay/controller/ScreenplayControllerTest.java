@@ -102,6 +102,34 @@ class ScreenplayControllerTest {
     }
 
     @Test
+    void appendsResidualIssuesToBodyNotJustCount() {
+        // 告警不只给数量：剧本末尾应逐条列出残留问题，作者据此校对
+        when(pipeline.convert("小说正文", "电影", null)).thenReturn(sampleResult());
+
+        ResponseEntity<String> resp = controller.convert("小说正文", null, "电影", "yaml", null);
+
+        assertThat(resp.getHeaders().getFirst("X-Validation-Warnings")).isEqualTo("1");
+        assertThat(resp.getBody()).contains("自检报告");
+        assertThat(resp.getBody()).contains("[S1]").contains("残留问题"); // 来自 sampleResult 的问题
+    }
+
+    @Test
+    void appendsCleanPassNoteWhenNoIssues() {
+        Scene scene = new Scene("S1",
+                new Heading(IntExt.INT, "客栈", "黄昏"),
+                "概要", List.of("油灯昏黄。"), List.of(), "",
+                new SourceRef(1, "原文片段"), null);
+        Screenplay sp = new Screenplay(new ScreenplayMeta(3, 1), "剧名", "梗概", "电影", List.of(), null, List.of(scene));
+        when(pipeline.convert("小说正文", "电影", null))
+                .thenReturn(new ConversionResult(sp, new ValidationReport(List.of())));
+
+        ResponseEntity<String> resp = controller.convert("小说正文", null, "电影", "yaml", null);
+
+        assertThat(resp.getHeaders().getFirst("X-Validation-Warnings")).isEqualTo("0");
+        assertThat(resp.getBody()).contains("自检通过");
+    }
+
+    @Test
     void refineReturnsRefinedSceneWithWarningHeader() {
         Character shen = new Character("沈砚", List.of(), "剑客");
         Scene refined = new Scene("S1",

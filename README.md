@@ -98,6 +98,7 @@ java -jar target/novel2screenplay-0.0.1-SNAPSHOT.jar
 响应：
 - 响应头 `X-Validation-Warnings`：自检修复后残留的问题数（0 表示无残留）。
 - 响应头 `Content-Disposition`：以剧名命名的下载文件（`-OJ`/浏览器可直接存盘）。
+- 剧本**末尾附「自检报告」注释**：逐条列出残留告警（`[场景] 字段：说明`），让作者明确知道哪一场、哪个字段还需人工校对——告警不只给数字。注释是 YAML `#` / Fountain `/* */`，不影响格式合法性与 Schema 校验。
 
 **curl 示例**（Windows / *nix 通用）：
 

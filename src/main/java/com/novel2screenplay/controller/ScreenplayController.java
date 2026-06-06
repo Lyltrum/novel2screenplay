@@ -9,6 +9,7 @@ import com.novel2screenplay.pipeline.ConversionPipeline;
 import com.novel2screenplay.pipeline.ConversionResult;
 import com.novel2screenplay.refine.SceneRefinementService;
 import com.novel2screenplay.validate.SceneValidator;
+import com.novel2screenplay.validate.ValidationIssue;
 import com.novel2screenplay.validate.ValidationReport;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -39,6 +40,7 @@ import java.util.List;
  *   - ?episodes= 剧集分集的总集数（可选，缺省由模型按节奏自动决定；仅剧集形态生效）
  *   - 响应：剧本文本 + 响应头 X-Validation-Warnings（残留问题数）
  *           + Content-Disposition（以剧名为名的下载文件，便于直接存盘）
+ *           剧本末尾附「自检报告」注释，逐条列出残留告警，便于作者定位校对
  */
 @RestController
 @RequestMapping("/api/screenplay")
@@ -108,6 +110,7 @@ public class ScreenplayController {
         String body = fountain
                 ? fountainExporter.toFountain(screenplay)
                 : yamlExporter.toYaml(screenplay);
+        body += renderReport(result.report(), fountain);   // 把残留告警内容附在末尾，作者可逐条校对
         MediaType contentType = fountain
                 ? new MediaType("text", "plain", StandardCharsets.UTF_8)
                 : new MediaType("text", "yaml", StandardCharsets.UTF_8);
@@ -119,6 +122,34 @@ public class ScreenplayController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
                         .filename(filename, StandardCharsets.UTF_8).build().toString())
                 .body(body);
+    }
+
+    /**
+     * 把残留校验问题渲染成可读注释附在剧本末尾——告警不只给数量(X-Validation-Warnings)，
+     * 更要让作者明确知道"哪一场、哪个字段还需人工校对"。注释不影响 YAML/Fountain 合法性
+     * （解析时被忽略），下载的文件里也能直接看到。YAML 用 #，Fountain 用 /* *&#47; 包裹。
+     */
+    private String renderReport(ValidationReport report, boolean fountain) {
+        if (report.isClean()) {
+            String line = "自检通过：无残留校验问题。";
+            return fountain ? "\n/*\n" + line + "\n*/\n" : "\n# " + line + "\n";
+        }
+        String header = "自检报告 · 残留校验告警 " + report.count()
+                + " 处（自动修复后仍存在，不影响格式合法性，供作者优先校对）";
+        StringBuilder sb = new StringBuilder("\n");
+        if (fountain) {
+            sb.append("/*\n").append(header).append("\n");
+            for (ValidationIssue i : report.issues()) {
+                sb.append("  ").append(i).append("\n");
+            }
+            sb.append("*/\n");
+        } else {
+            sb.append("# ").append(header).append("\n");
+            for (ValidationIssue i : report.issues()) {
+                sb.append("#   ").append(i).append("\n");
+            }
+        }
+        return sb.toString();
     }
 
     private String requireText(String text) {
