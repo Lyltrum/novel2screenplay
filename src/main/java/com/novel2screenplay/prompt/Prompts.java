@@ -105,9 +105,9 @@ public final class Prompts {
         return TITLE_LOGLINE.formatted(style, synopsis);
     }
 
-    private static final String REPAIR = """
-            下面是一份自动生成的剧本(YAML)，以及它的体检问题清单。
-            请仅针对问题清单逐条修复，其余内容尽量保持不变，返回修复后的完整剧本。
+    private static final String REPAIR_SCENE = """
+            下面是一份自动生成剧本中的【单个场景】(YAML)，以及它的体检问题清单。
+            请仅针对问题清单逐条修复这一个场景，其余内容尽量保持不变，只返回修复后的这一个场景。
 
             【修复要求】
             - time_of_day 必须用中文：清晨 / 白天 / 黄昏 / 夜晚 / 午夜 / 黎明。
@@ -116,19 +116,26 @@ public final class Prompts {
             - action 不得含心理描写或抽象判断（如"他心想/意识到/明白"），改写成可拍摄的动作、表情或环境细节。
             - 过长的信息倾倒式对白要拆短或外化为动作，保留潜台词。
             - craft 的 objective/conflict/turn/function 必须补全；turn 不能是"无变化"。
-            - 每个场景必须保留 source.excerpt 原文摘录，且不要改动 source.chapter 与场景 id。
-            - 不要新增或删除场景，不要大幅改写动作与对白。
+            - 保留 source 原文摘录，不要改动 source 与场景 id；不要把本场拆成多个或改写成别的场景。
 
-            【问题清单】
+            【人物登记表】
             %s
 
-            【当前剧本 YAML】
+            【问题清单】（仅本场景）
+            %s
+
+            【当前场景 YAML】
             %s
             """;
 
-    /** 拼装"带问题清单修复剧本"的 prompt（自检修复闭环）。 */
-    public static String repair(String issues, String currentYaml) {
-        return REPAIR.formatted(issues, currentYaml);
+    /**
+     * 拼装"带问题清单修复单个场景"的 prompt（自检修复闭环）。
+     * 按场景修复而非整本进出：输入/输出都有界，长篇不会撞上模型单次输出上限、也不会因截断丢场景。
+     */
+    public static String repairScene(String issues, List<Character> characters, String sceneYaml) {
+        String roster = renderBible(new StoryBible(
+                characters == null ? List.of() : characters, List.of()));
+        return REPAIR_SCENE.formatted(roster, issues, sceneYaml);
     }
 
     private static final String REFINE = """
@@ -193,6 +200,9 @@ public final class Prompts {
         return EPISODE_PLANNING.formatted(countDirective, sceneList);
     }
 
+    /** 注入提示词的单个人物设定最大字数——长篇人物表会膨胀，截断描述以控制每次抽取调用的 token。 */
+    private static final int BIBLE_DESC_MAX_CHARS = 40;
+
     private static String renderBible(StoryBible bible) {
         if (bible == null || bible.characters() == null || bible.characters().isEmpty()) {
             return "（暂无，以本章为准）";
@@ -204,10 +214,14 @@ public final class Prompts {
                 sb.append("（别名：").append(String.join("、", c.aliases())).append("）");
             }
             if (c.description() != null && !c.description().isBlank()) {
-                sb.append("：").append(c.description());
+                sb.append("：").append(truncate(c.description().strip(), BIBLE_DESC_MAX_CHARS));
             }
             sb.append('\n');
         }
         return sb.toString().strip();
+    }
+
+    private static String truncate(String s, int max) {
+        return s.length() <= max ? s : s.substring(0, max) + "…";
     }
 }
