@@ -57,16 +57,21 @@ public class EpisodePlanner {
         return renumber(all);
     }
 
-    /** 单次分集调用：把一批场景的精简清单交给模型，产出该批的集编排。 */
+    /** 单次分集调用：把一批场景的精简清单交给模型，产出该批的集编排。失败则跳过该窗。 */
     private List<Episode> planWindow(List<Scene> scenes, Integer targetEpisodes) {
-        EpisodePlan plan = chatClient.prompt()
-                .user(Prompts.episodePlanning(renderSceneList(scenes), targetEpisodes))
-                .call()
-                .entity(EpisodePlan.class);
-        if (plan == null || plan.episodes() == null) {
+        try {
+            EpisodePlan plan = chatClient.prompt()
+                    .user(Prompts.episodePlanning(renderSceneList(scenes), targetEpisodes))
+                    .call()
+                    .entity(EpisodePlan.class);
+            if (plan == null || plan.episodes() == null) {
+                return List.of();
+            }
+            return plan.episodes();
+        } catch (Exception e) {
+            log.warn("一个分集窗口规划失败，跳过该窗（{} 个场景未分集）：{}", scenes.size(), e.getMessage());
             return List.of();
         }
-        return plan.episodes();
     }
 
     /** 按场景顺序切成若干 ≤ size 的连续窗口（纯逻辑，便于测试）。 */

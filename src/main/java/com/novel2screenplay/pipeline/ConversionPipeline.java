@@ -85,14 +85,20 @@ public class ConversionPipeline {
         List<Chapter> chapters = chapterSplitter.split(novelText);
         log.info("切分出 {} 章", chapters.size());
 
+        // 逐章登记：单章失败只跳过本章登记并告警，不让整本转换崩（尽力而为、失败可观测）
         StoryBible bible = StoryBible.empty();
         for (Chapter chapter : chapters) {
-            bible = storyBibleService.update(bible, chapter);
+            try {
+                bible = storyBibleService.update(bible, chapter);
+            } catch (Exception e) {
+                log.warn("第 {} 章人物/地点登记失败，跳过本章登记：{}", chapter.index(), e.getMessage());
+            }
         }
         log.info("登记表建立完成：人物 {} 位，地点 {} 处",
                 bible.characters().size(), bible.locations().size());
 
         // 逐章 → 逐块抽取（长文规模化）：超长章节切块，块间用滚动提要保叙事连续
+        // 单块抽取失败只跳过该块并告警，其余块照常产出
         List<Scene> scenes = new ArrayList<>();
         for (Chapter chapter : chapters) {
             List<String> chunks = chunkSplitter.split(chapter.text());
@@ -100,17 +106,31 @@ public class ConversionPipeline {
             for (String chunk : chunks) {
                 Chapter chunkUnit = new Chapter(chapter.index(), chapter.title(), chunk);
                 String synopsis = buildSynopsis(scenes);
-                List<Scene> chunkScenes =
-                        sceneExtractionService.extract(chunkUnit, bible, effectiveStyle, synopsis);
-                scenes.addAll(chunkScenes);
-                chapterSceneCount += chunkScenes.size();
+                try {
+                    List<Scene> chunkScenes =
+                            sceneExtractionService.extract(chunkUnit, bible, effectiveStyle, synopsis);
+                    scenes.addAll(chunkScenes);
+                    chapterSceneCount += chunkScenes.size();
+                } catch (Exception e) {
+                    log.warn("第 {} 章某块场景抽取失败，跳过该块：{}", chapter.index(), e.getMessage());
+                }
             }
             log.info("第 {} 章（{} 块）抽出 {} 个场景", chapter.index(), chunks.size(), chapterSceneCount);
         }
 
         scenes = dedupByExcerpt(scenes);
+        if (scenes.isEmpty()) {
+            throw new ConversionException("未能从小说中抽取出任何场景（模型调用可能全部失败），请稍后重试");
+        }
 
-        TitleLogline titleLogline = titleLoglineService.generate(scenes, effectiveStyle);
+        // 剧名/梗概生成失败用占位文本兜底，不阻断整本输出（残留问题会在校验中体现）
+        TitleLogline titleLogline;
+        try {
+            titleLogline = titleLoglineService.generate(scenes, effectiveStyle);
+        } catch (Exception e) {
+            log.warn("剧名/梗概生成失败，使用占位文本：{}", e.getMessage());
+            titleLogline = new TitleLogline("未命名剧本", "");
+        }
 
         Screenplay screenplay = screenplayAssembler.assemble(
                 chapters.size(),
