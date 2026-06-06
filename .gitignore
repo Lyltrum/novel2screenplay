@@ -32,6 +32,9 @@ docs/*.txt
 # 本地截图/草稿，不入库
 imgs/
 
+# 本地笔记/变更说明，仅本地阅读，不入库
+notes/
+
 # OS
 .DS_Store
 Thumbs.db
