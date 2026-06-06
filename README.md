@@ -18,7 +18,8 @@
 | **来源可追溯** | 每个场景回填原文出处（章节号 + 原文片段），作者可逐场对照原文校验改编是否忠实——把"AI 黑盒"变成"可验证的辅助初稿" |
 | **自检 + 自动修复闭环** | 生成后自动体检（必填字段、对白角色是否在登记表、时间是否中文、来源是否完整），有问题则带着问题清单让模型自我修复（有界 ≤2 轮），残留问题数通过响应头暴露 |
 | **跨章人物一致性** | 逐章建立人物登记表（主名 + 别名 + 设定）并合并去重，注入每个场景生成，保证全篇称呼统一（如"铁面人 = 苏窈的兄长"被正确归并） |
-| **多格式 + 多风格** | 同时支持导出 YAML 与 Fountain；改编风格可选（电影 / 话剧 / 短剧 / 分镜） |
+| **剧集分集（集≠章）** | 剧集形态下把场景按戏剧节奏重排成「集」（独立叙事单元 + 集尾钩子），模拟编剧分集大纲；自动校验分集"不重不漏"，可指定总集数或交模型按节奏自动决定 |
+| **多格式 + 多形态** | 同时支持导出 YAML 与 Fountain；改编形态默认 **剧集**（电视剧/网剧，叠加分集层），可选 电影 / 话剧 / 短剧 / 分镜 单本形态 |
 | **长文规模化** | 超长章节按段落自动切块，突破单次上下文限制；块间用"滚动提要"保叙事连续（提要复用已抽场景的 summary，不额外烧 token） |
 | **交互式精修** | 作者拿到初稿后，可对单个场景下达修改指令（如"改成外景雨夜"）做局部重生成，保持人物一致、保留来源溯源 |
 
@@ -39,12 +40,13 @@
 split/      章节切分          bible/      跨章人物/地点登记
 extract/    场景抽取·标题生成  assemble/   全局编号·组装
 validate/   体检 + 修复闭环    export/     YAML / Fountain 导出
-style/      风格指引          prompt/     集中的提示词
-pipeline/   流水线编排        controller/ REST 入口
-model/      Schema record     config/     Bean 装配
+episode/    剧集分集编排       style/      风格指引
+prompt/     集中的提示词      pipeline/   流水线编排
+controller/ REST 入口         model/      Schema record
+config/     Bean 装配
 ```
 
-流水线顺序：**切章 → 逐章建立完整登记表 → 注入登记表与风格逐章抽场景 → 生成剧名/梗概 → 全局编号组装 → 自检修复闭环 → 导出**。
+流水线顺序：**切章 → 逐章建立完整登记表 → 注入登记表与风格逐章抽场景 → 生成剧名/梗概 → 全局编号组装 → 自检修复闭环 →（剧集形态）按节奏分集 → 导出**。
 
 ---
 
@@ -89,7 +91,8 @@ java -jar target/novel2screenplay-0.0.1-SNAPSHOT.jar
 |---|---|---|---|
 | 小说全文 | 请求体（text/plain） | — | 必填 |
 | `title` | query | 自动生成 | 可选，覆盖自动剧名 |
-| `style` | query | `电影` | 改编风格：电影/话剧/短剧/分镜 |
+| `style` | query | `剧集` | 改编形态：`剧集`（默认，叠加分集层）/ 电影 / 话剧 / 短剧 / 分镜 |
+| `episodes` | query | 自动 | 仅剧集形态生效；指定总集数，缺省由模型按节奏自动决定 |
 | `format` | query | `yaml` | 输出格式：`yaml` 或 `fountain` |
 
 响应头 `X-Validation-Warnings`：自检修复后残留的问题数（0 表示无残留）。
@@ -97,7 +100,8 @@ java -jar target/novel2screenplay-0.0.1-SNAPSHOT.jar
 **curl 示例**（Windows / *nix 通用）：
 
 ```bash
-curl -X POST "http://localhost:8080/api/screenplay/convert?style=电影&format=yaml" \
+# 默认剧集形态，指定分 3 集（去掉 episodes 则由模型按节奏自动决定）
+curl -X POST "http://localhost:8080/api/screenplay/convert?episodes=3&format=yaml" \
      -H "Content-Type: text/plain; charset=utf-8" \
      --data-binary "@src/main/resources/sample/novel.txt" \
      -o screenplay.yml
@@ -149,7 +153,7 @@ mvn test
 mvn test -Dlive=true -Dtest=ConversionPipelineLiveTest
 ```
 
-- 离线测试覆盖：章节切分、YAML/Fountain 导出、全局编号、剧本体检、控制器逻辑、风格映射。
+- 离线测试覆盖：章节切分、长文分块、YAML/Fountain 导出、全局编号、剧本体检、分集校验（不重不漏）、控制器逻辑、风格映射。
 - live 测试覆盖：Qwen 结构化输出、单章抽取、3 章全流程端到端（生成 `examples/sample-output.yml`）。
 
 ---
@@ -158,10 +162,10 @@ mvn test -Dlive=true -Dtest=ConversionPipelineLiveTest
 
 `web/index.html` 是一个独立单页（翻译器风格：左边粘贴小说，右边渲染剧本），仅供直观演示，**不属于课题、可删**。
 
-用法：先启动后端，再用浏览器直接打开 `web/index.html`。支持风格切换（电影/话剧/短剧/分镜）与视图切换（剧本/YAML/Fountain），并显示校验告警数。
+用法：先启动后端，再用浏览器直接打开 `web/index.html`。支持形态切换（剧集/电影/话剧/短剧/分镜）、剧集形态下指定集数、视图切换（剧本/YAML/Fountain），并显示校验告警数。
 > 跨域由 `config/WebCorsConfig`（仅 dev、可删）放开。
 
 ## 📁 示例
 
 - 输入：[`src/main/resources/sample/novel.txt`](src/main/resources/sample/novel.txt)（3 章原创短篇）
-- 输出：[`examples/sample-output.yml`](examples/sample-output.yml)（15 个场景、跨章人物合并、来源可追溯）
+- 输出：[`examples/sample-output.yml`](examples/sample-output.yml)（剧集形态：11 个场景、分 3 集带集尾钩子、跨章人物合并、来源可追溯）
