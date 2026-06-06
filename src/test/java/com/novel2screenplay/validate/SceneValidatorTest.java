@@ -48,7 +48,7 @@ class SceneValidatorTest {
         Scene scene = new Scene("S1",
                 new Heading(IntExt.INT, "大堂", "夜晚"),
                 "概要", List.of(),
-                List.of(new DialogueLine("路人甲", "", "你好", null)),
+                List.of(new DialogueLine("赵捕头", "", "你好", null)),
                 "", new SourceRef(1, "原文"), null);
         Screenplay sp = new Screenplay(null, "t", "l", "电影",
                 List.of(new Character("沈砚", List.of(), "剑客")),
@@ -59,7 +59,26 @@ class SceneValidatorTest {
 
         assertThat(report.issues())
                 .anyMatch(i -> i.field().equals("dialogue.character")
-                        && i.message().contains("路人甲"));
+                        && i.message().contains("赵捕头"));
+    }
+
+    @Test
+    void allowsGenericSpeakerDialogue() {
+        // 路人甲/士兵等无名群演不在登记表，但属泛称白名单，不应被判为"角色不在登记表"
+        Scene scene = new Scene("S1",
+                new Heading(IntExt.INT, "大堂", "夜晚"),
+                "概要", List.of("人群涌动。"),
+                List.of(new DialogueLine("路人甲", "", "快看那边！", null),
+                        new DialogueLine("士兵", "", "全部退后！", null)),
+                "", new SourceRef(1, "原文"),
+                new SceneCraft("围观", "秩序失控", "人群被驱散", SceneFunction.SETUP));
+        Screenplay sp = new Screenplay(null, "t", "l", "电影",
+                List.of(new Character("沈砚", List.of(), "剑客")),
+                null, List.of(scene));
+
+        ValidationReport report = validator.validate(sp);
+
+        assertThat(report.issues()).noneMatch(i -> i.field().equals("dialogue.character"));
     }
 
     @Test

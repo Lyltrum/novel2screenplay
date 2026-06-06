@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * 只负责：体检剧本，产出问题清单（不改数据）。
  * 修改交给 RepairService——校验与修复职责分离。
  * <p>
- * 检查项：必填字段、场景标题取值、time_of_day 须中文、对白角色须在登记表内、
+ * 检查项：必填字段、场景标题取值、time_of_day 须中文、对白角色须在登记表内（无名群演泛称除外）、
  * 对白 line 非空、来源可追溯字段完整。
  */
 @Component
@@ -33,6 +33,16 @@ public class SceneValidator {
 
     /** 单句对白超过此字数视为疑似信息倾倒。 */
     private static final int EXPOSITION_MAX_CHARS = 80;
+
+    /**
+     * 无名群演的泛称白名单：这类说话人（路人甲、群众、士兵、侍女…）无需登记，
+     * 不算"角色不在登记表"。保留这类对白比强行塞给主角更真实——见 Prompts 对应指示。
+     */
+    private static final Pattern GENERIC_SPEAKER = Pattern.compile(
+            "^(路人|群众|众人|众|围观者?|百姓|村民|乡民|士兵|官兵|守卫|护卫|卫兵|侍卫|侍女|丫鬟|丫头|"
+                    + "随从|小厮|仆人|家丁|伙计|掌柜|店家|商贩|小贩|老者|老人|老妪|妇人|男子|女子|青年|"
+                    + "少年|孩童|小孩|童子|门客|车夫|船夫|乞丐|和尚|僧人|道士|医师|郎中|账房|学徒|长老|"
+                    + "弟子|执事)[甲乙丙丁戊己庚辛一二三四五六七八九十0-9A-Z]*$");
 
     /** 体检整部剧本（含顶层 title/logline 与每个场景）。 */
     public ValidationReport validate(Screenplay screenplay) {
@@ -148,7 +158,8 @@ public class SceneValidator {
             }
             if (isBlank(line.character())) {
                 issues.add(new ValidationIssue(id, "dialogue.character", "对白缺少说话角色"));
-            } else if (!known.isEmpty() && !known.contains(line.character().strip())) {
+            } else if (!known.isEmpty() && !known.contains(line.character().strip())
+                    && !isGenericSpeaker(line.character())) {
                 issues.add(new ValidationIssue(id, "dialogue.character",
                         "说话角色「" + line.character() + "」不在人物登记表内"));
             }
@@ -187,6 +198,11 @@ public class SceneValidator {
             }
         }
         return names;
+    }
+
+    /** 是否为无需登记的泛指群演（路人甲/群众/士兵…），用于放宽对白角色校验。 */
+    private boolean isGenericSpeaker(String name) {
+        return name != null && GENERIC_SPEAKER.matcher(name.strip()).find();
     }
 
     private boolean isBlank(String s) {
