@@ -92,6 +92,23 @@
   .convert:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 22px rgba(227,164,74,.3)}
   .convert:disabled{opacity:.55;cursor:wait}
 
+  .filebtn{
+    font-family:inherit;font-size:13px;letter-spacing:1px;color:var(--muted);cursor:pointer;white-space:nowrap;
+    background:var(--stage-2);border:1px solid var(--line);border-radius:2px;padding:7px 12px;transition:border-color .2s,color .2s;
+  }
+  .filebtn:hover{border-color:var(--amber);color:var(--ivory)}
+  .filechip{display:none;align-items:center;gap:6px;font-size:12px;color:var(--amber-soft);max-width:150px}
+  .filechip.on{display:inline-flex}
+  .filechip .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .filechip .x{cursor:pointer;color:var(--muted);font-size:14px}
+  .filechip .x:hover{color:var(--amber)}
+  .dl{
+    font-family:inherit;font-size:12px;letter-spacing:1px;color:var(--amber-soft);cursor:pointer;
+    background:transparent;border:1px solid var(--line);border-radius:2px;padding:5px 13px;transition:all .18s;
+  }
+  .dl:hover:not(:disabled){border-color:var(--amber);color:var(--ivory)}
+  .dl:disabled{opacity:.4;cursor:not-allowed}
+
   /* ── 工作台 ── */
   main{display:flex;height:calc(100vh - 74px);position:relative}
   .pane{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
@@ -228,6 +245,12 @@
       <input id="episodes" type="number" min="1" placeholder="自动" title="仅剧集形态生效，留空由模型按节奏自动决定" />
     </div>
     <div class="field">
+      <label>文件</label>
+      <input id="file" type="file" accept=".txt,text/plain" hidden />
+      <label for="file" class="filebtn">选择 .txt</label>
+      <span class="filechip" id="filechip"><span class="nm"></span><span class="x" id="fileclear" title="清除所选文件">✕</span></span>
+    </div>
+    <div class="field">
       <label>视图</label>
       <div class="seg" id="view">
         <button data-v="script" class="on">剧本</button>
@@ -255,7 +278,10 @@
   <section class="pane">
     <div class="pane-head">
       <span class="t">剧本 · Screenplay</span>
-      <span class="meta" id="ometa"></span>
+      <span style="display:flex;align-items:center;gap:12px">
+        <span class="meta" id="ometa"></span>
+        <button class="dl" id="download" disabled title="把当前视图的剧本保存为文件">下载</button>
+      </span>
     </div>
     <div class="stage-wrap">
       <div class="script" id="out">
@@ -272,12 +298,30 @@
 const API = "http://localhost:8080/api/screenplay/convert";
 const $ = s => document.querySelector(s);
 const novel = $("#novel"), out = $("#out"), go = $("#go");
+const fileInput = $("#file"), fileChip = $("#filechip"), fileClear = $("#fileclear"), dlBtn = $("#download");
 let view = "script";
 let lastWarn = null;
+let uploadFile = null;            // 已选上传文件；非空则转换走 multipart，否则用左侧文本
 
 novel.addEventListener("input", () => {
+  if(uploadFile) return;          // 文件模式下不覆盖计数显示
   $("#count").textContent = novel.value.length.toLocaleString() + " 字";
 });
+
+fileInput.addEventListener("change", () => {
+  uploadFile = fileInput.files[0] || null;
+  if(uploadFile){
+    fileChip.querySelector(".nm").textContent = uploadFile.name;
+    fileChip.classList.add("on");
+    $("#count").textContent = "已选择文件 · " + uploadFile.name;
+  } else clearFile();
+});
+fileClear.addEventListener("click", clearFile);
+function clearFile(){
+  uploadFile = null; fileInput.value = "";
+  fileChip.classList.remove("on");
+  $("#count").textContent = novel.value.length.toLocaleString() + " 字";
+}
 
 $("#view").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
@@ -286,7 +330,23 @@ $("#view").addEventListener("click", e => {
   showView();                       // 切视图优先用缓存，避免重复调用模型
 });
 
-go.addEventListener("click", () => { cacheYaml = cacheFountain = null; fetchFor(view); });
+go.addEventListener("click", () => { cacheYaml = cacheFountain = null; dlBtn.disabled = true; fetchFor(view); });
+
+// 下载：把当前视图对应的剧本文本存成文件（剧名取自 YAML）
+dlBtn.addEventListener("click", () => {
+  const isFountain = view === "fountain";
+  const content = isFountain ? cacheFountain : cacheYaml;
+  if(content == null) return;
+  let name = "screenplay";
+  try{ const sp = jsyaml.load(cacheYaml || ""); if(sp && sp.title) name = sp.title; }catch(e){}
+  name = (name.replace(/[\\\/:*?"<>|\s]/g,"_").slice(0,50)) || "screenplay";
+  const ext = isFountain ? "fountain" : "yml";
+  const blob = new Blob([content], {type:(isFountain?"text/plain":"text/yaml")+";charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name + "." + ext;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+});
 
 function esc(s){return (s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 
@@ -310,7 +370,7 @@ function showView(){
 
 async function fetchFor(v){
   const text = novel.value.trim();
-  if(!text){ out.innerHTML = errBox("请先在左侧粘贴小说原文。"); return; }
+  if(!uploadFile && !text){ out.innerHTML = errBox("请先在左侧粘贴小说原文，或选择一个 .txt 文件。"); return; }
   const style = $("#style").value;
   const format = v === "fountain" ? "fountain" : "yaml";
   go.disabled = true;
@@ -319,16 +379,20 @@ async function fetchFor(v){
     const eps = $("#episodes").value.trim();
     let url = `${API}?style=${encodeURIComponent(style)}&format=${format}`;
     if(eps) url += `&episodes=${encodeURIComponent(eps)}`;
-    const res = await fetch(url, {
-      method:"POST",
-      headers:{"Content-Type":"text/plain; charset=utf-8"},
-      body:text
-    });
+    let opts;
+    if(uploadFile){               // 文件上传：multipart，浏览器自动带边界，勿手设 Content-Type
+      const fd = new FormData(); fd.append("file", uploadFile);
+      opts = { method:"POST", body: fd };
+    } else {                      // 直接粘贴：text/plain
+      opts = { method:"POST", headers:{"Content-Type":"text/plain; charset=utf-8"}, body:text };
+    }
+    const res = await fetch(url, opts);
     if(!res.ok) throw new Error("后端返回 " + res.status);
     lastWarn = res.headers.get("X-Validation-Warnings");
     const body = await res.text();
     if(format === "fountain") cacheFountain = body; else cacheYaml = body;
     showView();
+    dlBtn.disabled = false;
   }catch(err){
     out.innerHTML = errBox("转换失败：" + err.message +
       "<br/><span style='font-size:12px;color:#a85f3a'>请确认后端已启动（localhost:8080），且已配置 API Key。</span>");

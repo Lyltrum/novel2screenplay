@@ -1,6 +1,11 @@
 spring:
   application:
     name: novel2screenplay
+  servlet:
+    multipart:
+      # 上传小说文件大小上限——默认 1MB 对长篇偏小，放宽到 20MB
+      max-file-size: 20MB
+      max-request-size: 20MB
   profiles:
     # 默认启用 local 档：自动加载被 .gitignore 忽略的 application-local.yml（存放本地密钥）。
     # 部署或他人运行时，改用环境变量 AI_DASHSCOPE_API_KEY 即可，不依赖该文件。

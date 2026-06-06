@@ -20,8 +20,10 @@ import com.novel2screenplay.validate.ValidationIssue;
 import com.novel2screenplay.validate.ValidationReport;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +76,28 @@ class ScreenplayControllerTest {
     @Test
     void rejectsBlankInput() {
         assertThatThrownBy(() -> controller.convert("   ", null, "电影", "yaml", null))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void convertFileReadsUploadedNovelAndSetsDownloadHeader() {
+        when(pipeline.convert("小说正文", "电影", null)).thenReturn(sampleResult());
+        MockMultipartFile file = new MockMultipartFile("file", "novel.txt", "text/plain",
+                "小说正文".getBytes(StandardCharsets.UTF_8));
+
+        ResponseEntity<String> resp = controller.convertFile(file, null, "电影", "yaml", null);
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(200);
+        assertThat(resp.getBody()).contains("int_ext:");
+        assertThat(resp.getHeaders().getFirst("X-Validation-Warnings")).isEqualTo("1");
+        // 输出文件：Content-Disposition 以剧名作下载文件名
+        assertThat(resp.getHeaders().getFirst("Content-Disposition")).contains("filename");
+    }
+
+    @Test
+    void convertFileRejectsEmptyUpload() {
+        MockMultipartFile empty = new MockMultipartFile("file", "novel.txt", "text/plain", new byte[0]);
+        assertThatThrownBy(() -> controller.convertFile(empty, null, "电影", "yaml", null))
                 .isInstanceOf(ResponseStatusException.class);
     }
 

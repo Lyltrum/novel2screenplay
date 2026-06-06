@@ -89,22 +89,28 @@ java -jar target/novel2screenplay-0.0.1-SNAPSHOT.jar
 
 | 参数 | 位置 | 默认 | 说明 |
 |---|---|---|---|
-| 小说全文 | 请求体（text/plain） | — | 必填 |
+| 小说全文 | 请求体 | — | 必填。两种等价方式：`text/plain` 直接放正文，**或** `multipart/form-data` 上传 `.txt` 文件（字段名 `file`，UTF-8） |
 | `title` | query | 自动生成 | 可选，覆盖自动剧名 |
 | `style` | query | `剧集` | 改编形态：`剧集`（默认，叠加分集层）/ 电影 / 话剧 / 短剧 / 分镜 |
 | `episodes` | query | 自动 | 仅剧集形态生效；指定总集数，缺省由模型按节奏自动决定 |
 | `format` | query | `yaml` | 输出格式：`yaml` 或 `fountain` |
 
-响应头 `X-Validation-Warnings`：自检修复后残留的问题数（0 表示无残留）。
+响应：
+- 响应头 `X-Validation-Warnings`：自检修复后残留的问题数（0 表示无残留）。
+- 响应头 `Content-Disposition`：以剧名命名的下载文件（`-OJ`/浏览器可直接存盘）。
 
 **curl 示例**（Windows / *nix 通用）：
 
 ```bash
-# 默认剧集形态，指定分 3 集（去掉 episodes 则由模型按节奏自动决定）
+# ① 文本方式：请求体直接放正文，指定分 3 集
 curl -X POST "http://localhost:8080/api/screenplay/convert?episodes=3&format=yaml" \
      -H "Content-Type: text/plain; charset=utf-8" \
      --data-binary "@src/main/resources/sample/novel.txt" \
      -o screenplay.yml
+
+# ② 文件上传方式：multipart 上传 .txt（-OJ 让 curl 用响应头里的剧名存盘）
+curl -X POST "http://localhost:8080/api/screenplay/convert?episodes=3&format=yaml" \
+     -F "file=@src/main/resources/sample/novel.txt" -OJ
 ```
 
 **PowerShell 示例**：
@@ -162,7 +168,7 @@ mvn test -Dlive=true -Dtest=ConversionPipelineLiveTest
 
 `web/index.html` 是一个独立单页（翻译器风格：左边粘贴小说，右边渲染剧本），仅供直观演示，**不属于课题、可删**。
 
-用法：先启动后端，再用浏览器直接打开 `web/index.html`。支持形态切换（剧集/电影/话剧/短剧/分镜）、剧集形态下指定集数、视图切换（剧本/YAML/Fountain），并显示校验告警数。
+用法：先启动后端，再用浏览器直接打开 `web/index.html`。支持形态切换（剧集/电影/话剧/短剧/分镜）、剧集形态下指定集数、**选择 .txt 文件上传**（走 multipart）或左侧直接粘贴、视图切换（剧本/YAML/Fountain）、把结果**一键下载**为文件，并显示校验告警数。
 > 跨域由 `config/WebCorsConfig`（仅 dev、可删）放开。
 
 ## 📁 示例
