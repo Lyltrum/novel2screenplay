@@ -28,14 +28,22 @@ public class StoryBibleService {
 
     /** 用本章信息更新登记表，返回合并后的新登记表。 */
     public StoryBible update(StoryBible current, Chapter chapter) {
-        StoryBible found = chatClient.prompt()
+        return merge(current, extractDelta(chapter));
+    }
+
+    /**
+     * 只抽取本章登场人物与地点（不合并）——该调用只吃单章正文、不依赖前序登记表，
+     * 因此各章彼此独立、可并行；合并交由 {@link #merge} 在 Java 端按章序完成，结果与串行一致。
+     */
+    public StoryBible extractDelta(Chapter chapter) {
+        return chatClient.prompt()
                 .user(Prompts.bibleExtraction(chapter))
                 .call()
                 .entity(StoryBible.class);
-        return merge(current, found);
     }
 
-    private StoryBible merge(StoryBible base, StoryBible add) {
+    /** 把新抽取的人物/地点并入既有登记表（按主名/别名去重）；幂等、可重复折叠。 */
+    public StoryBible merge(StoryBible base, StoryBible add) {
         List<Character> characters = new ArrayList<>(base.characters());
         if (add != null && add.characters() != null) {
             for (Character incoming : add.characters()) {

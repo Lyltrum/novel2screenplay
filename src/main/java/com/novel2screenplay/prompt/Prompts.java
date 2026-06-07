@@ -91,6 +91,20 @@ public final class Prompts {
         return BIBLE_EXTRACTION.formatted(chapter.index(), chapter.title(), chapter.text());
     }
 
+    private static final String CHAPTER_SYNOPSIS = """
+            用一两句话概括下面这一章的核心剧情（谁、做了什么、导致了什么结果），
+            供后续改编时作"前情提要"之用。
+            只输出概括本身，不要加任何前缀、编号、标题或解释；控制在 60 字以内。
+
+            【本章正文】（第 %d 章：%s）
+            %s
+            """;
+
+    /** 拼装单章一句话梗概 prompt（作为前情提要素材，各章可并行预算）。 */
+    public static String chapterSynopsis(Chapter chapter) {
+        return CHAPTER_SYNOPSIS.formatted(chapter.index(), chapter.title(), chapter.text());
+    }
+
     private static final String TITLE_LOGLINE = """
             根据下面的剧情概要，为这部「%s」剧本拟定：
             - title：一个简洁有力、贴合内容的剧名。

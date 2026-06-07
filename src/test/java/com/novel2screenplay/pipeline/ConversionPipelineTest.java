@@ -4,6 +4,7 @@ import com.novel2screenplay.assemble.ScreenplayAssembler;
 import com.novel2screenplay.bible.StoryBibleService;
 import com.novel2screenplay.episode.EpisodePlanner;
 import com.novel2screenplay.episode.EpisodeValidator;
+import com.novel2screenplay.extract.ChapterSynopsisService;
 import com.novel2screenplay.extract.SceneExtractionService;
 import com.novel2screenplay.extract.TitleLoglineService;
 import com.novel2screenplay.model.DialogueLine;
@@ -34,13 +35,14 @@ import static org.mockito.Mockito.when;
 class ConversionPipelineTest {
 
     private final StoryBibleService bible = mock(StoryBibleService.class);
+    private final ChapterSynopsisService synopsis = mock(ChapterSynopsisService.class);
     private final SceneExtractionService extract = mock(SceneExtractionService.class);
     private final TitleLoglineService titleLogline = mock(TitleLoglineService.class);
     private final RepairService repair = mock(RepairService.class);
     private final EpisodePlanner episodePlanner = mock(EpisodePlanner.class);
 
     private final ConversionPipeline pipeline = new ConversionPipeline(
-            new ChapterSplitter(), new ChunkSplitter(1500), bible, extract, titleLogline,
+            new ChapterSplitter(), new ChunkSplitter(1500), bible, synopsis, extract, titleLogline,
             new ScreenplayAssembler(), new SceneValidator(), repair,
             new StyleTemplate(), episodePlanner, new EpisodeValidator());
 
@@ -48,8 +50,10 @@ class ConversionPipelineTest {
 
     @Test
     void skipsFailedChunkButKeepsScenesFromOthers() {
-        when(bible.update(any(), any())).thenReturn(StoryBible.empty());
-        // 第一章抽取抛错、第二章成功 → 整本不崩，保留第二章场景（重排为 S1）
+        when(bible.extractDelta(any())).thenReturn(StoryBible.empty());
+        when(bible.merge(any(), any())).thenReturn(StoryBible.empty());
+        when(synopsis.summarize(any())).thenReturn("梗概");
+        // 一章抽取抛错、另一章成功 → 整本不崩，保留成功章场景（重排为 S1）；并行下哪章失败不定，但成功数恒为 1
         when(extract.extract(any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("模型抽风"))
                 .thenReturn(List.of(scene()));
@@ -64,7 +68,9 @@ class ConversionPipelineTest {
 
     @Test
     void throwsConversionExceptionWhenAllExtractionFails() {
-        when(bible.update(any(), any())).thenReturn(StoryBible.empty());
+        when(bible.extractDelta(any())).thenReturn(StoryBible.empty());
+        when(bible.merge(any(), any())).thenReturn(StoryBible.empty());
+        when(synopsis.summarize(any())).thenReturn("梗概");
         when(extract.extract(any(), any(), any(), any())).thenThrow(new RuntimeException("全挂"));
 
         assertThatThrownBy(() -> pipeline.convert(NOVEL, "电影", null))

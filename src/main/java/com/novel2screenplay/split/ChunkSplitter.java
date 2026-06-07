@@ -21,7 +21,7 @@ public class ChunkSplitter {
 
     private final int maxChars;
 
-    public ChunkSplitter(@Value("${screenplay.chunk.max-chars:1500}") int maxChars) {
+    public ChunkSplitter(@Value("${screenplay.chunk.max-chars:3000}") int maxChars) {
         this.maxChars = maxChars;
     }
 
