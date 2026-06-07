@@ -6,7 +6,7 @@
 - 输出：结构化剧本 YAML（或行业标准 Fountain 格式）
 - 定位：降低小说改编门槛，产出"可信、可校对、可手改"的初稿
 
-> Schema 设计与设计原因详见 [`docs/screenplay-schema.md`](docs/screenplay-schema.md)。
+> Schema 设计与设计原因详见 [`screenplay-schema.md`](screenplay-schema.md)（根目录·必交文档）。
 > 完整示例输出见 [`docs/斗破苍穹-前十章.yml`](docs/斗破苍穹-前十章.yml)（真实长篇·斗破苍穹前十章实测，剧名由模型自拟《莫欺少年穷》）
 > 与 [`examples/sample-output.yml`](examples/sample-output.yml)（内置原创短篇）。
 
