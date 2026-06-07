@@ -4,6 +4,7 @@ import com.novel2screenplay.pipeline.ConversionException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -33,6 +34,15 @@ class GlobalExceptionHandlerTest {
 
         assertThat(resp.getStatusCode().value()).isEqualTo(502);
         assertThat(resp.getBody().get("error")).isEqualTo("未能抽取出任何场景");
+    }
+
+    @Test
+    void mapsUnreadableBodyTo400() {
+        ResponseEntity<Map<String, Object>> resp =
+                handler.handleBadRequest(new HttpMessageNotReadableException("Required request body is missing"));
+
+        assertThat(resp.getStatusCode().value()).isEqualTo(400);
+        assertThat(resp.getBody().get("error").toString()).contains("请求体");
     }
 
     @Test
