@@ -297,10 +297,12 @@ python -c "import yaml,json,jsonschema; jsonschema.validate(yaml.safe_load(open(
 check-jsonschema --schemafile docs/screenplay.schema.json out.yml
 ```
 
-> 仓库示例 [`examples/sample-output.yml`](../examples/sample-output.yml) 已通过该 Schema 校验。
+> 仓库两份示例 [`examples/sample-output.yml`](../examples/sample-output.yml)（内置原创短篇）
+> 与 [`docs/斗破苍穹-前十章.yml`](斗破苍穹-前十章.yml)（斗破苍穹前十章实测·74 场）**均已通过该 Schema 校验**。
 
 ---
 
 ## 11. 完整示例
 
-完整的端到端示例输出见 [`examples/sample-output.yml`](../examples/sample-output.yml)（由 [`src/main/resources/sample/novel.txt`](../src/main/resources/sample/novel.txt) 这篇 3 章示例小说生成）。
+- **真实长篇实测**：[`docs/斗破苍穹-前十章.yml`](斗破苍穹-前十章.yml)——由斗破苍穹前十章生成，10 章 → 74 场、自动分集、跨章人物合并去重、每场来源可追溯（剧名由模型自拟《莫欺少年穷》）。
+- **可直接复现的内置示例**：[`examples/sample-output.yml`](../examples/sample-output.yml)——由 [`src/main/resources/sample/novel.txt`](../src/main/resources/sample/novel.txt) 这篇 3 章原创短篇生成。
