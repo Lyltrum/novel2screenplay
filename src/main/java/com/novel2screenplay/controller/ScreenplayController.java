@@ -5,8 +5,10 @@ import com.novel2screenplay.export.YamlExporter;
 import com.novel2screenplay.model.Character;
 import com.novel2screenplay.model.Scene;
 import com.novel2screenplay.model.Screenplay;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.novel2screenplay.pipeline.ConversionPipeline;
 import com.novel2screenplay.pipeline.ConversionResult;
+import com.novel2screenplay.pipeline.ProgressListener;
 import com.novel2screenplay.refine.SceneRefinementService;
 import com.novel2screenplay.validate.SceneValidator;
 import com.novel2screenplay.validate.ValidationIssue;
@@ -22,11 +24,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 只负责：HTTP 入参/出参与格式选择，转调 ConversionPipeline，不含业务逻辑。
@@ -46,7 +55,12 @@ import java.util.List;
 @RequestMapping("/api/screenplay")
 public class ScreenplayController {
 
+    private static final Logger log = LoggerFactory.getLogger(ScreenplayController.class);
     private static final String HEADER_WARNINGS = "X-Validation-Warnings";
+    /** 长篇转换耗时较长，SSE 连接超时放宽到 30 分钟。 */
+    private static final long SSE_TIMEOUT_MS = 30L * 60 * 1000;
+    /** 专用 JSON 序列化器：把进度/结果事件转成 JSON 字符串再推送，避免与 YAMLMapper 混淆。 */
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final ConversionPipeline pipeline;
     private final YamlExporter yamlExporter;
@@ -98,6 +112,89 @@ public class ScreenplayController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "读取上传文件失败：" + e.getMessage());
         }
         return buildResponse(requireText(novelText), title, style, format, episodes);
+    }
+
+    /**
+     * 流式版（文本）：与 /convert 入参一致，但用 SSE 实时推送转换进度，最后推完整结果。
+     * 事件：progress{phase,message}（多条）→ result{format,warnings,filename,body} 或 error{error}。
+     */
+    @PostMapping(value = "/convert/stream", consumes = MediaType.TEXT_PLAIN_VALUE)
+    public SseEmitter convertStream(
+            @RequestBody String novelText,
+            @RequestParam(required = false) String title,
+            @RequestParam(defaultValue = "剧集") String style,
+            @RequestParam(defaultValue = "yaml") String format,
+            @RequestParam(required = false) Integer episodes) {
+        return stream(requireText(novelText), title, style, format, episodes);
+    }
+
+    /** 流式版（文件上传）：multipart 上传 .txt，其余与流式文本版一致。 */
+    @PostMapping(value = "/convert/stream", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SseEmitter convertFileStream(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String title,
+            @RequestParam(defaultValue = "剧集") String style,
+            @RequestParam(defaultValue = "yaml") String format,
+            @RequestParam(required = false) Integer episodes) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "上传文件不能为空");
+        }
+        String novelText;
+        try {
+            novelText = new String(file.getBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "读取上传文件失败：" + e.getMessage());
+        }
+        return stream(requireText(novelText), title, style, format, episodes);
+    }
+
+    /**
+     * 在后台线程跑转换，把流水线进度经 ProgressListener 转成 SSE 事件实时推送，
+     * 完成后推 result 事件（含完整剧本），失败推 error 事件。与 buildResponse 产出一致，只是改为流式。
+     */
+    private SseEmitter stream(String novelText, String title, String style, String format, Integer episodes) {
+        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
+        ExecutorService worker = Executors.newSingleThreadExecutor();
+        worker.execute(() -> {
+            try {
+                ProgressListener listener = (phase, message) ->
+                        send(emitter, "progress", Map.of("phase", phase, "message", message));
+
+                ConversionResult result = pipeline.convert(novelText, style, episodes, listener);
+                Screenplay screenplay = applyTitleOverride(result.screenplay(), title);
+
+                boolean fountain = "fountain".equalsIgnoreCase(format);
+                String body = (fountain ? fountainExporter.toFountain(screenplay) : yamlExporter.toYaml(screenplay))
+                        + renderReport(result.report(), fountain);
+
+                Map<String, Object> payload = new LinkedHashMap<>();
+                payload.put("format", fountain ? "fountain" : "yaml");
+                payload.put("warnings", result.report().count());
+                payload.put("filename", downloadName(screenplay.title(), fountain ? "fountain" : "yml"));
+                payload.put("body", body);
+                send(emitter, "result", payload);
+                emitter.complete();
+            } catch (Exception e) {
+                log.warn("流式转换失败：{}", e.getMessage());
+                send(emitter, "error", Map.of("error", e.getMessage() == null ? "转换失败" : e.getMessage()));
+                emitter.complete();
+            } finally {
+                worker.shutdown();
+            }
+        });
+        return emitter;
+    }
+
+    /** 线程安全地推送一条 SSE 事件（data 为 JSON 字符串）；客户端断开等发送异常静默忽略。 */
+    private void send(SseEmitter emitter, String event, Object data) {
+        try {
+            String json = JSON.writeValueAsString(data);
+            synchronized (emitter) {
+                emitter.send(SseEmitter.event().name(event).data(json, MediaType.APPLICATION_JSON));
+            }
+        } catch (Exception e) {
+            log.debug("SSE 事件发送失败（客户端可能已断开）：{}", e.getMessage());
+        }
     }
 
     /** 文本→剧本→导出的共享流程：转换、覆盖剧名、按格式导出，附校验告警数与下载文件名。 */

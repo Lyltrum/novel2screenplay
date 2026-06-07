@@ -218,6 +218,12 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .loading p{letter-spacing:2px;font-size:14px}
   .loading .sub{font-size:12px;color:#a89d86}
+  /* 流式进度 */
+  .prog{margin-top:16px;max-height:260px;overflow-y:auto;width:min(460px,82%);text-align:left;
+    font-size:13px;line-height:1.85;color:#6a6253;padding-right:6px}
+  .prog-line{padding:3px 0;border-bottom:1px dashed #e6ddca;animation:fadein .25s ease}
+  .prog-line:last-child{color:#a23b1e;font-weight:600}
+  @keyframes fadein{from{opacity:0;transform:translateY(3px)}to{opacity:1}}
 
   .err{margin:20px;padding:16px 20px;background:#fbe9e6;border-left:3px solid #c0492f;color:#8a3320;font-size:14px;border-radius:2px}
 
@@ -368,16 +374,18 @@ function showView(){
   }
 }
 
+// 流式转换：POST 到 /convert/stream，按 SSE 实时显示进度，最后用 result 事件渲染成品。
 async function fetchFor(v){
   const text = novel.value.trim();
   if(!uploadFile && !text){ out.innerHTML = errBox("请先在左侧粘贴小说原文，或选择一个 .txt 文件。"); return; }
   const style = $("#style").value;
   const format = v === "fountain" ? "fountain" : "yaml";
   go.disabled = true;
-  out.innerHTML = loadingBox(style);
+  const prog = startProgress(style);
+  let shown = false;            // 是否已收到 result/error 并完成渲染
   try{
     const eps = $("#episodes").value.trim();
-    let url = `${API}?style=${encodeURIComponent(style)}&format=${format}`;
+    let url = `${API}/stream?style=${encodeURIComponent(style)}&format=${format}`;
     if(eps) url += `&episodes=${encodeURIComponent(eps)}`;
     let opts;
     if(uploadFile){               // 文件上传：multipart，浏览器自动带边界，勿手设 Content-Type
@@ -387,18 +395,78 @@ async function fetchFor(v){
       opts = { method:"POST", headers:{"Content-Type":"text/plain; charset=utf-8"}, body:text };
     }
     const res = await fetch(url, opts);
-    if(!res.ok) throw new Error("后端返回 " + res.status);
-    lastWarn = res.headers.get("X-Validation-Warnings");
-    const body = await res.text();
-    if(format === "fountain") cacheFountain = body; else cacheYaml = body;
-    showView();
-    dlBtn.disabled = false;
+    if(!res.ok){                   // 流开始前就报错（400/413/502 等），按 JSON 错误展示
+      let msg = "后端返回 " + res.status;
+      try{ const j = await res.json(); if(j && j.error) msg = j.error; }catch(e){}
+      throw new Error(msg);
+    }
+    await consumeSSE(res, {
+      progress: d => prog.add(d.message),
+      result: d => {
+        shown = true;
+        lastWarn = String(d.warnings);
+        if(d.format === "fountain") cacheFountain = d.body; else cacheYaml = d.body;
+        showView();
+        dlBtn.disabled = false;
+      },
+      error: d => {
+        shown = true;
+        out.innerHTML = errBox("转换失败：" + (d.error||"未知错误"));
+      }
+    });
+    if(!shown) throw new Error("连接中断，未收到完整结果");
   }catch(err){
-    out.innerHTML = errBox("转换失败：" + err.message +
+    if(!shown) out.innerHTML = errBox("转换失败：" + err.message +
       "<br/><span style='font-size:12px;color:#a85f3a'>请确认后端已启动（localhost:8080），且已配置 API Key。</span>");
   }finally{
     go.disabled = false;
   }
+}
+
+// 读取 fetch 的可读流，按 SSE 协议（事件以空行分隔）解析并分发给 handlers。
+async function consumeSSE(res, handlers){
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  while(true){
+    const {value, done} = await reader.read();
+    if(done) break;
+    buf += decoder.decode(value, {stream:true});
+    buf = buf.replace(/\r\n/g, "\n");
+    let idx;
+    while((idx = buf.indexOf("\n\n")) >= 0){
+      const raw = buf.slice(0, idx); buf = buf.slice(idx + 2);
+      const ev = parseSSE(raw);
+      if(ev && handlers[ev.event]) handlers[ev.event](ev.data);
+    }
+  }
+}
+function parseSSE(raw){
+  let event = "message"; const dataLines = [];
+  for(const line of raw.split("\n")){
+    if(line.startsWith("event:")) event = line.slice(6).trim();
+    else if(line.startsWith("data:")) dataLines.push(line.slice(5).replace(/^ /, ""));
+  }
+  if(!dataLines.length) return null;
+  let data; try{ data = JSON.parse(dataLines.join("\n")); }catch(e){ data = dataLines.join("\n"); }
+  return { event, data };
+}
+// 进度面板：渲染放映机 + 逐条追加进度行，返回 {add(msg)}。
+function startProgress(style){
+  out.innerHTML = `<div class="loading">
+    <div class="projector"></div>
+    <p>正在把小说改编成「${esc(style)}」剧本…</p>
+    <div class="sub">实时进度（长文按章并行抽取，请稍候）</div>
+    <div class="prog" id="prog"></div>
+  </div>`;
+  const box = $("#prog");
+  return { add(msg){
+    const line = document.createElement("div");
+    line.className = "prog-line";
+    line.textContent = "▸ " + msg;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }};
 }
 
 function renderScreenplay(yamlText){
@@ -495,13 +563,6 @@ function renderScene(s){
   return html;
 }
 
-function loadingBox(style){
-  return `<div class="loading">
-    <div class="projector"></div>
-    <p>正在把小说改编成「${style}」剧本…</p>
-    <div class="sub">逐章登记人物 → 切分场景 → 自检修复 → 分集编排，长文约需数分钟</div>
-  </div>`;
-}
 function errBox(msg){ return `<div class="err">${msg}</div>`; }
 </script>
 </body>
